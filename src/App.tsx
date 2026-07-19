@@ -3,7 +3,7 @@ import { CvCompareView } from './components/CvCompareView';
 import { CvDocument } from './components/CvDocument';
 import { useCvLibrary } from './hooks/useCvLibrary';
 import { compareCvVersions } from './lib/compareCv';
-import { loadMasterCv } from './lib/loadCvData';
+import { loadMasterCv, type CvDataSource } from './lib/loadCvData';
 import { mergeCvVersion } from './lib/mergeCvVersion';
 import {
   applyCvPrintScale,
@@ -12,8 +12,6 @@ import {
 } from './lib/printCv';
 import type { CvVersion, ResolvedCv } from './types/cv';
 import './AppShell.css';
-
-const master = loadMasterCv();
 
 type AppMode = 'preview' | 'compare';
 
@@ -26,6 +24,7 @@ function getAllVersions(library: {
 
 export const App = () => {
   const pageRef = useRef<HTMLElement>(null);
+  const [dataSource, setDataSource] = useState<CvDataSource>('local');
   const {
     library,
     isLoading,
@@ -34,13 +33,27 @@ export const App = () => {
     saveCopy,
     setAsBase,
     removeSaved,
-  } = useCvLibrary();
+  } = useCvLibrary(dataSource);
+
+  const master = useMemo(
+    () => loadMasterCv(dataSource),
+    [dataSource],
+  );
 
   const [selectedVersionId, setSelectedVersionId] = useState('base');
   const [mode, setMode] = useState<AppMode>('preview');
   const [overflowsPage, setOverflowsPage] = useState(false);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+
+  const isExampleMode = dataSource === 'example';
+
+  useEffect(() => {
+    setSelectedVersionId('base');
+    setMode('preview');
+    setActionMessage(null);
+    setActionError(null);
+  }, [dataSource]);
 
   useEffect(() => {
     if (!library) {
@@ -69,7 +82,7 @@ export const App = () => {
     }
 
     return mergeCvVersion(master, selectedVersion);
-  }, [selectedVersion]);
+  }, [master, selectedVersion]);
 
   const baseResolvedCv = useMemo((): ResolvedCv | null => {
     if (!library) {
@@ -77,7 +90,7 @@ export const App = () => {
     }
 
     return mergeCvVersion(master, library.base);
-  }, [library]);
+  }, [library, master]);
 
   const diffs = useMemo(() => {
     if (!library || !selectedVersion || selectedVersion.id === library.base.id) {
@@ -90,7 +103,7 @@ export const App = () => {
       mergeCvVersion(master, library.base).experience,
       mergeCvVersion(master, selectedVersion).experience,
     );
-  }, [library, selectedVersion]);
+  }, [library, master, selectedVersion]);
 
   useEffect(() => {
     const pageElement = pageRef.current;
@@ -266,6 +279,26 @@ export const App = () => {
           </div>
 
           <div className="app-toolbar-group">
+            <span className="app-label">Data</span>
+            <div className="app-segmented">
+              <button
+                type="button"
+                className={dataSource === 'local' ? 'app-segment app-segment-active' : 'app-segment'}
+                onClick={() => setDataSource('local')}
+              >
+                My CV
+              </button>
+              <button
+                type="button"
+                className={dataSource === 'example' ? 'app-segment app-segment-active' : 'app-segment'}
+                onClick={() => setDataSource('example')}
+              >
+                Public template
+              </button>
+            </div>
+          </div>
+
+          <div className="app-toolbar-group">
             <span className="app-label">View</span>
             <div className="app-segmented">
               <button
@@ -299,6 +332,7 @@ export const App = () => {
             type="button"
             className="app-button app-button-secondary"
             onClick={() => void handleSaveCopy()}
+            disabled={isExampleMode}
           >
             Save copy
           </button>
@@ -306,7 +340,7 @@ export const App = () => {
             type="button"
             className="app-button app-button-secondary"
             onClick={() => void handleSetAsBase()}
-            disabled={isBaseSelected}
+            disabled={isBaseSelected || isExampleMode}
           >
             Set as base
           </button>
@@ -315,6 +349,7 @@ export const App = () => {
               type="button"
               className="app-button app-button-danger"
               onClick={() => void handleDeleteSaved()}
+              disabled={isExampleMode}
             >
               Delete
             </button>
@@ -328,6 +363,15 @@ export const App = () => {
           </button>
         </div>
       </header>
+
+      {isExampleMode ? (
+        <p
+          className="app-info-banner"
+          role="status"
+        >
+          Viewing the public GitHub template. Your local CV files are unchanged.
+        </p>
+      ) : null}
 
       {actionMessage ? (
         <p

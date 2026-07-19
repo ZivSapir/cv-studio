@@ -5,6 +5,7 @@ import {
   promoteCvToBase,
   saveCvCopy,
 } from '../lib/cvApi';
+import type { CvDataSource } from '../lib/loadCvData';
 import type { CvLibrary, CvVersion } from '../types/cv';
 
 type UseCvLibraryResult = {
@@ -21,7 +22,7 @@ type UseCvLibraryResult = {
   removeSaved: (id: string) => Promise<void>;
 };
 
-export function useCvLibrary(): UseCvLibraryResult {
+export function useCvLibrary(source: CvDataSource): UseCvLibraryResult {
   const [library, setLibrary] = useState<CvLibrary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +32,7 @@ export function useCvLibrary(): UseCvLibraryResult {
     setError(null);
 
     try {
-      const nextLibrary = await fetchCvLibrary();
+      const nextLibrary = await fetchCvLibrary(source);
       setLibrary(nextLibrary);
     } catch (loadError) {
       const message = loadError instanceof Error
@@ -41,7 +42,7 @@ export function useCvLibrary(): UseCvLibraryResult {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [source]);
 
   useEffect(() => {
     void reloadLibrary();

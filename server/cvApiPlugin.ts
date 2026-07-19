@@ -20,8 +20,15 @@ type CvVersionFile = {
 };
 
 const DATA_DIR = path.resolve(process.cwd(), 'data');
-const BASE_PATH = path.join(DATA_DIR, 'base.yaml');
+const LOCAL_BASE_PATH = path.join(DATA_DIR, 'base.yaml');
+const EXAMPLE_BASE_PATH = path.join(DATA_DIR, 'base.example.yaml');
 const SAVED_DIR = path.join(DATA_DIR, 'saved');
+
+type DataSource = 'local' | 'example';
+
+function parseDataSource(value: string | null): DataSource {
+  return value === 'example' ? 'example' : 'local';
+}
 
 function slugify(label: string): string {
   return label
@@ -64,13 +71,19 @@ async function ensureSavedDir(): Promise<void> {
   await fs.mkdir(SAVED_DIR, { recursive: true });
 }
 
-async function listSavedVersions(): Promise<CvVersionFile[]> {
+async function listSavedVersions(source: DataSource): Promise<CvVersionFile[]> {
   await ensureSavedDir();
   const entries = await fs.readdir(SAVED_DIR);
   const versions: CvVersionFile[] = [];
 
   for (const entry of entries) {
-    if (!entry.endsWith('.yaml')) {
+    if (source === 'example') {
+      if (!entry.endsWith('.example.yaml')) {
+        continue;
+      }
+    } else if (entry.endsWith('.example.yaml')) {
+      continue;
+    } else if (!entry.endsWith('.yaml')) {
       continue;
     }
 
@@ -79,6 +92,10 @@ async function listSavedVersions(): Promise<CvVersionFile[]> {
   }
 
   return versions.sort((left, right) => left.label.localeCompare(right.label));
+}
+
+function getBasePath(source: DataSource): string {
+  return source === 'example' ? EXAMPLE_BASE_PATH : LOCAL_BASE_PATH;
 }
 
 function sendJson(
@@ -134,9 +151,11 @@ export function cvApiPlugin(): Plugin {
           const { pathname } = url;
 
           if (req.method === 'GET' && pathname === '/api/cv/library') {
-            const base = await readYamlFile<CvVersionFile>(BASE_PATH);
-            const saved = await listSavedVersions();
+            const source = parseDataSource(url.searchParams.get('source'));
+            const base = await readYamlFile<CvVersionFile>(getBasePath(source));
+            const saved = await listSavedVersions(source);
             sendJson(res, 200, {
+              source,
               base: {
                 ...base,
                 kind: 'base',
@@ -157,8 +176,8 @@ export function cvApiPlugin(): Plugin {
               notes?: string;
             };
 
-            const saved = await listSavedVersions();
-            const base = await readYamlFile<CvVersionFile>(BASE_PATH);
+            const saved = await listSavedVersions('local');
+            const base = await readYamlFile<CvVersionFile>(LOCAL_BASE_PATH);
             const source = body.sourceId === 'base'
               ? base
               : saved.find((entry) => entry.id === body.sourceId);
@@ -193,9 +212,9 @@ export function cvApiPlugin(): Plugin {
               sourceId: string;
             };
 
-            const saved = await listSavedVersions();
+            const saved = await listSavedVersions('local');
             const source = body.sourceId === 'base'
-              ? await readYamlFile<CvVersionFile>(BASE_PATH)
+              ? await readYamlFile<CvVersionFile>(LOCAL_BASE_PATH)
               : saved.find((entry) => entry.id === body.sourceId);
 
             if (!source) {
@@ -210,7 +229,7 @@ export function cvApiPlugin(): Plugin {
               updatedAt: new Date().toISOString(),
             };
 
-            await writeYamlFile(BASE_PATH, nextBase);
+            await writeYamlFile(LOCAL_BASE_PATH, nextBase);
             sendJson(res, 200, {
               ...nextBase,
               kind: 'base',

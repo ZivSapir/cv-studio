@@ -1,3 +1,4 @@
+import type { CvDataSource } from './loadCvData';
 import type { CvLibrary, CvVersion } from '../types/cv';
 
 async function parseJsonResponse<T>(response: Response): Promise<T> {
@@ -9,8 +10,10 @@ async function parseJsonResponse<T>(response: Response): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-export async function fetchCvLibrary(): Promise<CvLibrary> {
-  const response = await fetch('/api/cv/library');
+export async function fetchCvLibrary(
+  source: CvDataSource = 'local',
+): Promise<CvLibrary> {
+  const response = await fetch(`/api/cv/library?source=${source}`);
   return parseJsonResponse<CvLibrary>(response);
 }
 
