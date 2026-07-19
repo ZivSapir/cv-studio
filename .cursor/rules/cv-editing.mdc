@@ -1,0 +1,35 @@
+---
+description: CV Studio editing workflow — honest tailoring from master.yaml
+globs: cv-studio/**/*
+alwaysApply: false
+---
+
+# CV Studio rules
+
+## Source of truth
+- `data/master.yaml` holds verified facts only (dates, bullets, skills, education).
+- `data/base.yaml` is the current base CV overrides (headline, summary, ordering, visibility).
+- `data/saved/*.yaml` stores temporary/saved CV variants.
+- Never invent experience, skills, titles, or metrics in master or versions.
+- Wix has two roles under one tenure block. `internalPeriod` is truth for interviews, not shown on the PDF.
+
+## Voice & content rules
+- **No personal location, age, or gender** in headline, summary, or tailored copy. Do not write "based in Tel Aviv" or similar.
+- Company location on the Wix line (`Wix.com | Tel Aviv, Israel`) is fine — that is the employer, not the candidate.
+- **Past tense for Wix work.** The user previously worked at Wix. Use "At Wix, I built…", "engineered…", "drove…" — not present tense.
+- Present tense is OK only for general self-description that is still true (e.g. "I am passionate about learning") when not tied to Wix employment.
+
+## Tailoring a version
+1. Create or update `data/saved/<slug>.yaml` with `extends: master`.
+2. Override only: `headline`, `summary`, `hiddenBulletIds`, `experienceBulletOrder`, `projectOrder`, `skillCategoryOrder`.
+3. Emphasize dev work first; keep at least 2 QA/release bullets unless user asks to hide them.
+4. Keep output to one A4 page — shorten wording before hiding factual bullets.
+5. User can click **Set as base** in the app to promote a saved CV to `data/base.yaml`.
+
+## When user sends a job description
+- Match keywords to bullet/project `tags` in master.yaml.
+- Create a saved version file under `data/saved/`.
+- Rewrite headline + summary to align with the role; do not claim years of dev beyond the developer `internalPeriod`.
+- Frame QA/release as a strength (quality, releases, production), not as the primary identity for dev roles.
+- Summarize changes for the user: what moved up, what was hidden, what was rewritten.
+- Tell the user to click **Reload** in cv-studio after file edits.
