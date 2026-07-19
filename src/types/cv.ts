@@ -92,11 +92,18 @@ export type CvLibrary = {
   saved: CvVersion[];
 };
 
-export type CvDiffEntry = {
-  field: string;
-  base: string;
-  compare: string;
+export type CvDiffLine = {
+  type: 'context' | 'remove' | 'add';
+  content: string;
 };
+
+export type CvDiffSection = {
+  field: string;
+  lines: CvDiffLine[];
+};
+
+/** @deprecated Use CvDiffSection — kept for gradual migration */
+export type CvDiffEntry = CvDiffSection;
 
 export type ResolvedCv = {
   versionId: string;

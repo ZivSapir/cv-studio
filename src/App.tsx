@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { CvCompareView } from './components/CvCompareView';
 import { CvDocument } from './components/CvDocument';
 import { useCvLibrary } from './hooks/useCvLibrary';
-import { compareCvVersions } from './lib/compareCv';
+import { compareResolvedCvs } from './lib/compareCv';
 import { loadMasterCv, type CvDataSource } from './lib/loadCvData';
 import { mergeCvVersion } from './lib/mergeCvVersion';
 import {
@@ -108,21 +108,16 @@ export const App = () => {
   }, [compareBase, master]);
 
   const diffs = useMemo(() => {
-    if (!library || !selectedVersion || !compareBase) {
+    if (!baseResolvedCv || !resolvedCv || !compareBase) {
       return [];
     }
 
-    if (selectedVersion.id === compareBase.id) {
+    if (selectedVersion?.id === compareBase.id) {
       return [];
     }
 
-    return compareCvVersions(
-      compareBase,
-      selectedVersion,
-      mergeCvVersion(master, compareBase).experience,
-      mergeCvVersion(master, selectedVersion).experience,
-    );
-  }, [library, master, selectedVersion, compareBase]);
+    return compareResolvedCvs(baseResolvedCv, resolvedCv);
+  }, [baseResolvedCv, resolvedCv, selectedVersion, compareBase]);
 
   useEffect(() => {
     const pageElement = pageRef.current;
@@ -438,6 +433,7 @@ export const App = () => {
         <CvCompareView
           baseCv={baseResolvedCv}
           compareCv={resolvedCv}
+          baseLabel={compareBase?.label ?? 'Base CV'}
           diffs={diffs}
         />
       )}

@@ -20,6 +20,22 @@
   background: #ffffff;
 }
 
+.cv-compare-diffs-header {
+  margin-bottom: 16px;
+}
+
+.cv-compare-subtitle {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #627d98;
+}
+
+.cv-compare-diff-sections {
+  display: flex;
+  flex-direction: column;
+}
+
 .cv-compare-diff-list {
   margin: 0;
   padding: 0;

@@ -11,6 +11,7 @@
     "setup": "node scripts/setup-local-data.mjs"
   },
   "dependencies": {
+    "diff": "^9.0.0",
     "js-yaml": "^5.2.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",

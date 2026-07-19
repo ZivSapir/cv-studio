@@ -15,6 +15,8 @@ alwaysApply: false
 - Wix has two roles under one tenure block. `internalPeriod` is truth for interviews, not shown on the PDF.
 
 ## Voice & content rules
+- **No em dashes (`—`)** in CV copy (headline, summary, bullets, projects, education). They render as an overly wide "AI" dash in PDF. Use a comma, colon, semicolon, or a regular hyphen `-` instead (e.g. `Engineer - Platform`, not `Engineer — Platform`).
+- **No YAML line breaks inside hyphenated words.** Folded `>` blocks turn newlines into spaces, so `cross-\nrepository` becomes `cross- repository` on the PDF. Keep hyphenated words on one line (`cross-repository`).
 - **No personal location, age, or gender** in headline, summary, or tailored copy. Do not write "based in Tel Aviv" or similar.
 - Company location on the Wix line (`Wix.com | Tel Aviv, Israel`) is fine — that is the employer, not the candidate.
 - **Past tense for Wix work.** The user previously worked at Wix. Use "At Wix, I built…", "engineered…", "drove…" — not present tense.
@@ -24,9 +26,10 @@ alwaysApply: false
 1. Create or update `data/saved/<slug>.yaml` with `extends: master`.
 2. Override only: `headline`, `summary`, `hiddenBulletIds`, `experienceBulletOrder`, `projectOrder`, `skillCategoryOrder`.
 3. **Optional (rare):** `experienceAdditions` + `experienceOrder` for version-only experience (e.g. thesis). `education` override to avoid sidebar duplication. `projectOverrides` for shorter per-version project blurbs. `hiddenProjectIds` to drop projects.
-4. Emphasize dev work first; keep at least 2 QA/release bullets unless user asks to hide them.
+4. Emphasize dev work first; keep all three QA/release bullets when space allows.
 5. Keep output to one A4 page — shorten wording before hiding factual bullets.
-6. User can click **Set as Frontend base** to promote a saved CV to `data/bases/frontend-cv.yaml`.
+6. Confirm with the user before dropping in-progress project features they intend to ship (e.g. Google Calendar sync).
+7. User can click **Set as Frontend base** to promote a saved CV to `data/bases/frontend-cv.yaml`.
 
 ## When user sends a job description
 - Match keywords to bullet/project `tags` in master.yaml.

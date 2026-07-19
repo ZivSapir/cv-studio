@@ -1,39 +1,39 @@
-import type { CvDiffEntry, ResolvedCv } from '../types/cv';
+import type { CvDiffSection, ResolvedCv } from '../types/cv';
+import { CvDiffSectionView } from './CvDiffSectionView';
 import { CvDocument } from './CvDocument';
 import './CvCompareView.css';
 
 type CvCompareViewProps = {
   baseCv: ResolvedCv;
   compareCv: ResolvedCv;
-  diffs: CvDiffEntry[];
+  baseLabel: string;
+  diffs: CvDiffSection[];
 };
 
 export const CvCompareView = ({
   baseCv,
   compareCv,
+  baseLabel,
   diffs,
 }: CvCompareViewProps) => {
   return (
     <div className="cv-compare">
       {diffs.length ? (
         <section className="cv-compare-diffs">
-          <h2 className="cv-compare-title">Differences from base</h2>
-          <ul className="cv-compare-diff-list">
-            {diffs.map((diff) => (
-              <li
-                key={diff.field}
-                className="cv-compare-diff-item"
-              >
-                <p className="cv-compare-diff-field">{diff.field}</p>
-                <p className="cv-compare-diff-base">
-                  <strong>Base:</strong> {diff.base}
-                </p>
-                <p className="cv-compare-diff-compare">
-                  <strong>Selected:</strong> {diff.compare}
-                </p>
-              </li>
+          <div className="cv-compare-diffs-header">
+            <h2 className="cv-compare-title">Diff vs {baseLabel}</h2>
+            <p className="cv-compare-subtitle">
+              Red = removed from base. Green = added in selected CV. Unchanged lines shown for context.
+            </p>
+          </div>
+          <div className="cv-compare-diff-sections">
+            {diffs.map((section) => (
+              <CvDiffSectionView
+                key={section.field}
+                section={section}
+              />
             ))}
-          </ul>
+          </div>
         </section>
       ) : (
         <p className="cv-compare-empty">Selected CV matches the base.</p>
@@ -41,7 +41,7 @@ export const CvCompareView = ({
 
       <div className="cv-compare-grid">
         <div className="cv-compare-panel">
-          <p className="cv-compare-panel-label">Base CV</p>
+          <p className="cv-compare-panel-label">{baseLabel}</p>
           <div className="cv-compare-preview">
             <CvDocument cv={baseCv} />
           </div>
