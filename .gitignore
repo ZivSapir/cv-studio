@@ -25,3 +25,10 @@ dist-ssr
 
 # Generated design reference from local PDF export
 reference/
+
+# Personal CV data — keep local, never commit
+data/master.yaml
+data/base.yaml
+data/saved/*
+!data/saved/.gitkeep
+!data/saved/*.example.yaml

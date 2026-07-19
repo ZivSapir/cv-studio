@@ -7,9 +7,10 @@ alwaysApply: false
 # CV Studio rules
 
 ## Source of truth
-- `data/master.yaml` holds verified facts only (dates, bullets, skills, education).
-- `data/base.yaml` is the current base CV overrides (headline, summary, ordering, visibility).
-- `data/saved/*.yaml` stores temporary/saved CV variants.
+- `data/master.example.yaml` is the committed template with placeholders (for GitHub / new users).
+- `data/master.yaml` is local personal data (gitignored). Run `npm run setup` to create it from the template.
+- `data/base.yaml` is the current base CV overrides (local, gitignored).
+- `data/saved/*.yaml` stores temporary/saved CV variants (local, gitignored). See `data/saved/*.example.yaml` for committed examples.
 - Never invent experience, skills, titles, or metrics in master or versions.
 - Wix has two roles under one tenure block. `internalPeriod` is truth for interviews, not shown on the PDF.
 

@@ -1,0 +1,83 @@
+name: Your Name
+headline: Your Professional Title (e.g. Software Engineer)
+
+summary: >
+  2–4 sentences: who you are, what you build, and what you bring to a team. Lead with your
+  strongest angle for the roles you want. Mention architecture, impact, and tools you use
+  honestly. Optional: education or domain background in one clause at the end.
+
+contact:
+  phone: "+1-555-0100"
+  email: you@example.com
+  linkedin:
+    label: "Linkedin / your-handle"
+    url: "https://www.linkedin.com/in/your-handle/"
+  portfolio:
+    label: yourname.github.io/portfolio
+    url: "https://yourname.github.io/portfolio/"
+
+experience:
+  - id: acme
+    company: Acme Corp
+    location: City, Country
+    tenure: January 2020 - Present
+    roles:
+      - title: Software Engineer
+        internalPeriod: "2023 – Present"
+        bullets:
+          - id: acme-feature
+            text: >
+              Feature Area: Built [what] using [stack], improving [metric] for [users/team].
+            tags: [typescript, react, feature]
+          - id: acme-architecture
+            text: >
+              Architecture: Designed [component/system] with [patterns], enabling [benefit].
+            tags: [architecture, design-system]
+          - id: acme-tooling
+            text: >
+              Tooling: Created [internal tool/script] that reduced [pain point] by [honest outcome].
+            tags: [automation, developer-tools]
+      - title: Junior Engineer
+        internalPeriod: "2020 – 2023"
+        bullets:
+          - id: acme-quality
+            text: >
+              Quality: Wrote tests with [framework] and maintained [CI/release process detail].
+            tags: [testing, ci-cd]
+          - id: acme-delivery
+            text: >
+              Delivery: Shipped [type of work] with code review, documentation, and monitoring.
+            tags: [delivery, collaboration]
+
+projects:
+  - id: project-alpha
+    title: Project Alpha | Full-Stack
+    description: >
+      One line: problem you solved, stack (e.g. React, Node, Postgres), and a concrete feature
+      or outcome. Keep it honest and specific.
+    tags: [full-stack, side-project]
+  - id: project-beta
+    title: Project Beta | Mobile
+    description: >
+      One line: what the app does, who it is for, and one technical highlight (offline, sync, etc.).
+    tags: [mobile, react-native]
+
+skills:
+  - id: languages
+    label: "Languages & Frameworks:"
+    items: "TypeScript, JavaScript, React, Node.js, Python."
+  - id: infrastructure
+    label: "Infrastructure & Platform:"
+    items: "REST APIs, SQL, Git, CI/CD, Docker."
+  - id: practices
+    label: "Practices:"
+    items: "Code review, testing, agile delivery, technical writing."
+
+education:
+  institution: University Name
+  entries:
+    - degree: B.Sc. in Computer Science
+      period: 2016 – 2020
+      details:
+        - "Relevant coursework: algorithms, databases, software engineering."
+        - "Thesis or capstone: [topic in one line]."

@@ -1,0 +1,32 @@
+id: example-tailored
+label: Example — Senior Frontend (tailored)
+extends: master
+notes: >
+  Example saved version for a frontend-heavy role. Shows headline/summary overrides,
+  bullet reorder, hiding lower-priority items, and skill emphasis — without changing master facts.
+
+headline: Senior Frontend Engineer — Design Systems & Product UI
+
+summary: >
+  Frontend engineer focused on design systems, accessible UI components, and product-facing
+  features. At Acme Corp, built reusable UI infrastructure and shipped customer-facing
+  improvements with strong testing and release practices from earlier engineering roles.
+
+hiddenBulletIds:
+  - acme-quality
+
+experienceBulletOrder:
+  acme:
+    - acme-architecture
+    - acme-feature
+    - acme-tooling
+    - acme-delivery
+
+projectOrder:
+  - project-alpha
+  - project-beta
+
+skillCategoryOrder:
+  - languages
+  - infrastructure
+  - practices
