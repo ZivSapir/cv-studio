@@ -6,7 +6,9 @@ const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
 const copies = [
   ['data/master.example.yaml', 'data/master.yaml'],
-  ['data/base.example.yaml', 'data/base.yaml'],
+  ['data/bases/frontend-cv.example.yaml', 'data/bases/frontend-cv.yaml'],
+  ['data/bases/data-engineer-cv.example.yaml', 'data/bases/data-engineer-cv.yaml'],
+  ['data/bases/fullstack-cv.example.yaml', 'data/bases/fullstack-cv.yaml'],
 ];
 
 for (const [from, to] of copies) {
@@ -18,6 +20,7 @@ for (const [from, to] of copies) {
     continue;
   }
 
+  fs.mkdirSync(path.dirname(targetPath), { recursive: true });
   fs.copyFileSync(sourcePath, targetPath);
   console.log(`created ${to}`);
 }

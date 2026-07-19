@@ -10,16 +10,22 @@ import {
   clearCvPrintScale,
   cvNeedsOverflowWarning,
 } from './lib/printCv';
-import type { CvVersion, ResolvedCv } from './types/cv';
+import type { CvLibrary, CvVersion, ResolvedCv } from './types/cv';
 import './AppShell.css';
 
 type AppMode = 'preview' | 'compare';
 
-function getAllVersions(library: {
-  base: CvVersion;
-  saved: CvVersion[];
-}): CvVersion[] {
-  return [library.base, ...library.saved];
+const DEFAULT_VERSION_ID = 'frontend-cv';
+
+function getAllVersions(library: CvLibrary): CvVersion[] {
+  return [...library.bases, ...library.saved];
+}
+
+function getCompareBase(library: CvLibrary): CvVersion {
+  return (
+    library.bases.find((version) => version.id === library.compareBaseId)
+    ?? library.bases[0]
+  );
 }
 
 export const App = () => {
@@ -40,7 +46,7 @@ export const App = () => {
     [dataSource],
   );
 
-  const [selectedVersionId, setSelectedVersionId] = useState('base');
+  const [selectedVersionId, setSelectedVersionId] = useState(DEFAULT_VERSION_ID);
   const [mode, setMode] = useState<AppMode>('preview');
   const [overflowsPage, setOverflowsPage] = useState(false);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
@@ -49,7 +55,7 @@ export const App = () => {
   const isExampleMode = dataSource === 'example';
 
   useEffect(() => {
-    setSelectedVersionId('base');
+    setSelectedVersionId(DEFAULT_VERSION_ID);
     setMode('preview');
     setActionMessage(null);
     setActionError(null);
@@ -64,7 +70,7 @@ export const App = () => {
     const stillExists = allVersions.some((version) => version.id === selectedVersionId);
 
     if (!stillExists) {
-      setSelectedVersionId(library.base.id);
+      setSelectedVersionId(getCompareBase(library).id);
     }
   }, [library, selectedVersionId]);
 
@@ -73,7 +79,8 @@ export const App = () => {
       return null;
     }
 
-    return getAllVersions(library).find((version) => version.id === selectedVersionId) ?? library.base;
+    return getAllVersions(library).find((version) => version.id === selectedVersionId)
+      ?? getCompareBase(library);
   }, [library, selectedVersionId]);
 
   const resolvedCv = useMemo((): ResolvedCv | null => {
@@ -84,26 +91,38 @@ export const App = () => {
     return mergeCvVersion(master, selectedVersion);
   }, [master, selectedVersion]);
 
-  const baseResolvedCv = useMemo((): ResolvedCv | null => {
+  const compareBase = useMemo(() => {
     if (!library) {
       return null;
     }
 
-    return mergeCvVersion(master, library.base);
-  }, [library, master]);
+    return getCompareBase(library);
+  }, [library]);
+
+  const baseResolvedCv = useMemo((): ResolvedCv | null => {
+    if (!compareBase) {
+      return null;
+    }
+
+    return mergeCvVersion(master, compareBase);
+  }, [compareBase, master]);
 
   const diffs = useMemo(() => {
-    if (!library || !selectedVersion || selectedVersion.id === library.base.id) {
+    if (!library || !selectedVersion || !compareBase) {
+      return [];
+    }
+
+    if (selectedVersion.id === compareBase.id) {
       return [];
     }
 
     return compareCvVersions(
-      library.base,
+      compareBase,
       selectedVersion,
-      mergeCvVersion(master, library.base).experience,
+      mergeCvVersion(master, compareBase).experience,
       mergeCvVersion(master, selectedVersion).experience,
     );
-  }, [library, master, selectedVersion]);
+  }, [library, master, selectedVersion, compareBase]);
 
   useEffect(() => {
     const pageElement = pageRef.current;
@@ -187,7 +206,7 @@ export const App = () => {
 
     try {
       await setAsBase(selectedVersion.id);
-      setSelectedVersionId('base');
+      setSelectedVersionId(DEFAULT_VERSION_ID);
       setActionMessage('Base CV updated.');
     } catch (promoteError) {
       const message = promoteError instanceof Error
@@ -214,7 +233,7 @@ export const App = () => {
 
     try {
       await removeSaved(selectedVersion.id);
-      setSelectedVersionId('base');
+      setSelectedVersionId(DEFAULT_VERSION_ID);
       setActionMessage('Saved CV deleted.');
     } catch (deleteError) {
       const message = deleteError instanceof Error
@@ -240,7 +259,8 @@ export const App = () => {
     );
   }
 
-  const isBaseSelected = selectedVersion.id === library.base.id;
+  const isCompareBaseSelected = selectedVersion.id === compareBase?.id;
+  const isBaseProfile = selectedVersion.kind === 'base';
   const isSavedSelected = selectedVersion.kind === 'saved';
 
   return (
@@ -260,8 +280,15 @@ export const App = () => {
               value={selectedVersionId}
               onChange={(event) => setSelectedVersionId(event.target.value)}
             >
-              <optgroup label="Base">
-                <option value={library.base.id}>{library.base.label}</option>
+              <optgroup label="Base CVs">
+                {library.bases.map((version) => (
+                  <option
+                    key={version.id}
+                    value={version.id}
+                  >
+                    {version.label}
+                  </option>
+                ))}
               </optgroup>
               {library.saved.length ? (
                 <optgroup label="Saved">
@@ -312,7 +339,7 @@ export const App = () => {
                 type="button"
                 className={mode === 'compare' ? 'app-segment app-segment-active' : 'app-segment'}
                 onClick={() => setMode('compare')}
-                disabled={isBaseSelected}
+                disabled={isCompareBaseSelected}
               >
                 Compare
               </button>
@@ -340,9 +367,9 @@ export const App = () => {
             type="button"
             className="app-button app-button-secondary"
             onClick={() => void handleSetAsBase()}
-            disabled={isBaseSelected || isExampleMode}
+            disabled={isBaseProfile || isExampleMode}
           >
-            Set as base
+            Set as Frontend base
           </button>
           {isSavedSelected ? (
             <button

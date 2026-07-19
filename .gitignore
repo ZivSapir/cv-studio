@@ -29,6 +29,9 @@ reference/
 # Personal CV data — keep local, never commit
 data/master.yaml
 data/base.yaml
+data/bases/*
+!data/bases/.gitkeep
+!data/bases/*.example.yaml
 data/saved/*
 !data/saved/.gitkeep
 !data/saved/*.example.yaml

@@ -41,20 +41,51 @@ function filterExperience(
   }));
 }
 
+function buildExperience(
+  master: CvMaster,
+  version: CvVersion,
+): CvExperience[] {
+  const hiddenBulletIds = new Set(version.hiddenBulletIds ?? []);
+  const bulletOrder = version.experienceBulletOrder;
+
+  const fromMaster = filterExperience(
+    master.experience,
+    hiddenBulletIds,
+    bulletOrder,
+  );
+  const additions = filterExperience(
+    version.experienceAdditions ?? [],
+    hiddenBulletIds,
+    bulletOrder,
+  );
+
+  return orderByIds(
+    [...fromMaster, ...additions],
+    version.experienceOrder,
+  );
+}
+
 export function mergeCvVersion(
   master: CvMaster,
   version: CvVersion,
 ): ResolvedCv {
-  const hiddenBulletIds = new Set(version.hiddenBulletIds ?? []);
-
-  const experience = filterExperience(
-    master.experience,
-    hiddenBulletIds,
-    version.experienceBulletOrder,
-  );
+  const experience = buildExperience(master, version);
 
   const projects = orderByIds(
-    master.projects,
+    master.projects
+      .filter((project) => !version.hiddenProjectIds?.includes(project.id))
+      .map((project) => {
+        const override = version.projectOverrides?.[project.id];
+
+        if (!override) {
+          return project;
+        }
+
+        return {
+          ...project,
+          ...override,
+        };
+      }),
     version.projectOrder,
   );
 
@@ -73,6 +104,6 @@ export function mergeCvVersion(
     experience,
     projects,
     skills,
-    education: master.education,
+    education: version.education ?? master.education,
   };
 }

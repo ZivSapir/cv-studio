@@ -4,6 +4,31 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import { dump as stringifyYaml, load as parseYaml } from 'js-yaml';
 import type { Plugin } from 'vite';
 
+type CvExperienceFile = {
+  id: string;
+  company: string;
+  location: string;
+  tenure: string;
+  roles: {
+    title: string;
+    internalPeriod?: string;
+    bullets: {
+      id: string;
+      text: string;
+      tags?: string[];
+    }[];
+  }[];
+};
+
+type CvEducationFile = {
+  institution: string;
+  entries: {
+    degree: string;
+    period: string;
+    details?: string[];
+  }[];
+};
+
 type CvVersionFile = {
   id: string;
   label: string;
@@ -14,15 +39,22 @@ type CvVersionFile = {
   headline?: string;
   summary?: string;
   hiddenBulletIds?: string[];
+  hiddenProjectIds?: string[];
+  projectOverrides?: Record<string, { title?: string; description?: string }>;
+  experienceAdditions?: CvExperienceFile[];
+  experienceOrder?: string[];
   experienceBulletOrder?: Record<string, string[]>;
   projectOrder?: string[];
   skillCategoryOrder?: string[];
+  education?: CvEducationFile;
 };
 
 const DATA_DIR = path.resolve(process.cwd(), 'data');
-const LOCAL_BASE_PATH = path.join(DATA_DIR, 'base.yaml');
-const EXAMPLE_BASE_PATH = path.join(DATA_DIR, 'base.example.yaml');
+const BASES_DIR = path.join(DATA_DIR, 'bases');
 const SAVED_DIR = path.join(DATA_DIR, 'saved');
+const BASE_PROFILE_ORDER = ['frontend-cv', 'data-engineer-cv', 'fullstack-cv'];
+const COMPARE_BASE_ID = 'frontend-cv';
+const LEGACY_BASE_PATH = path.join(DATA_DIR, 'base.yaml');
 
 type DataSource = 'local' | 'example';
 
@@ -35,6 +67,22 @@ function slugify(label: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '') || 'cv';
+}
+
+function sortBaseProfiles(versions: CvVersionFile[]): CvVersionFile[] {
+  const orderIndex = (id: string) => {
+    const index = BASE_PROFILE_ORDER.indexOf(id);
+    return index === -1 ? BASE_PROFILE_ORDER.length : index;
+  };
+
+  return [...versions].sort((left, right) => {
+    const orderDiff = orderIndex(left.id) - orderIndex(right.id);
+    if (orderDiff !== 0) {
+      return orderDiff;
+    }
+
+    return left.label.localeCompare(right.label);
+  });
 }
 
 async function readBody(req: IncomingMessage): Promise<string> {
@@ -71,6 +119,44 @@ async function ensureSavedDir(): Promise<void> {
   await fs.mkdir(SAVED_DIR, { recursive: true });
 }
 
+async function ensureBasesDir(): Promise<void> {
+  await fs.mkdir(BASES_DIR, { recursive: true });
+}
+
+async function listBaseVersions(source: DataSource): Promise<CvVersionFile[]> {
+  await ensureBasesDir();
+  const entries = await fs.readdir(BASES_DIR);
+  const versions: CvVersionFile[] = [];
+
+  for (const entry of entries) {
+    if (source === 'example') {
+      if (!entry.endsWith('.example.yaml')) {
+        continue;
+      }
+    } else if (entry.endsWith('.example.yaml') || !entry.endsWith('.yaml')) {
+      continue;
+    }
+
+    const version = await readYamlFile<CvVersionFile>(path.join(BASES_DIR, entry));
+    versions.push(version);
+  }
+
+  if (versions.length === 0 && source === 'local') {
+    try {
+      const legacyBase = await readYamlFile<CvVersionFile>(LEGACY_BASE_PATH);
+      versions.push({
+        ...legacyBase,
+        id: legacyBase.id === 'base' ? COMPARE_BASE_ID : legacyBase.id,
+        label: legacyBase.label === 'Base CV' ? 'Frontend CV' : legacyBase.label,
+      });
+    } catch {
+      // no legacy base.yaml
+    }
+  }
+
+  return sortBaseProfiles(versions);
+}
+
 async function listSavedVersions(source: DataSource): Promise<CvVersionFile[]> {
   await ensureSavedDir();
   const entries = await fs.readdir(SAVED_DIR);
@@ -94,8 +180,20 @@ async function listSavedVersions(source: DataSource): Promise<CvVersionFile[]> {
   return versions.sort((left, right) => left.label.localeCompare(right.label));
 }
 
-function getBasePath(source: DataSource): string {
-  return source === 'example' ? EXAMPLE_BASE_PATH : LOCAL_BASE_PATH;
+async function findLocalVersion(sourceId: string): Promise<CvVersionFile | undefined> {
+  const bases = await listBaseVersions('local');
+  const baseMatch = bases.find((entry) => entry.id === sourceId);
+
+  if (baseMatch) {
+    return baseMatch;
+  }
+
+  const saved = await listSavedVersions('local');
+  return saved.find((entry) => entry.id === sourceId);
+}
+
+function getBaseFilePath(id: string): string {
+  return path.join(BASES_DIR, `${id}.yaml`);
 }
 
 function sendJson(
@@ -115,9 +213,14 @@ function stripVersionMeta(version: CvVersionFile): Omit<CvVersionFile, 'id' | 'l
     headline: version.headline,
     summary: version.summary,
     hiddenBulletIds: version.hiddenBulletIds,
+    hiddenProjectIds: version.hiddenProjectIds,
+    projectOverrides: version.projectOverrides,
+    experienceAdditions: version.experienceAdditions,
+    experienceOrder: version.experienceOrder,
     experienceBulletOrder: version.experienceBulletOrder,
     projectOrder: version.projectOrder,
     skillCategoryOrder: version.skillCategoryOrder,
+    education: version.education,
   };
 }
 
@@ -152,14 +255,15 @@ export function cvApiPlugin(): Plugin {
 
           if (req.method === 'GET' && pathname === '/api/cv/library') {
             const source = parseDataSource(url.searchParams.get('source'));
-            const base = await readYamlFile<CvVersionFile>(getBasePath(source));
+            const bases = await listBaseVersions(source);
             const saved = await listSavedVersions(source);
             sendJson(res, 200, {
               source,
-              base: {
-                ...base,
+              bases: bases.map((version) => ({
+                ...version,
                 kind: 'base',
-              },
+              })),
+              compareBaseId: COMPARE_BASE_ID,
               saved: saved.map((version) => ({
                 ...version,
                 kind: 'saved',
@@ -176,11 +280,7 @@ export function cvApiPlugin(): Plugin {
               notes?: string;
             };
 
-            const saved = await listSavedVersions('local');
-            const base = await readYamlFile<CvVersionFile>(LOCAL_BASE_PATH);
-            const source = body.sourceId === 'base'
-              ? base
-              : saved.find((entry) => entry.id === body.sourceId);
+            const source = await findLocalVersion(body.sourceId);
 
             if (!source) {
               sendJson(res, 404, { error: 'Source CV not found.' });
@@ -212,24 +312,25 @@ export function cvApiPlugin(): Plugin {
               sourceId: string;
             };
 
-            const saved = await listSavedVersions('local');
-            const source = body.sourceId === 'base'
-              ? await readYamlFile<CvVersionFile>(LOCAL_BASE_PATH)
-              : saved.find((entry) => entry.id === body.sourceId);
+            const source = await findLocalVersion(body.sourceId);
 
             if (!source) {
               sendJson(res, 404, { error: 'Source CV not found.' });
               return;
             }
 
+            const compareBase = (await listBaseVersions('local')).find(
+              (entry) => entry.id === COMPARE_BASE_ID,
+            );
             const nextBase: CvVersionFile = {
               ...stripVersionMeta(source),
-              id: 'base',
-              label: 'Base CV',
+              id: COMPARE_BASE_ID,
+              label: compareBase?.label ?? 'Frontend CV',
               updatedAt: new Date().toISOString(),
             };
 
-            await writeYamlFile(LOCAL_BASE_PATH, nextBase);
+            await ensureBasesDir();
+            await writeYamlFile(getBaseFilePath(COMPARE_BASE_ID), nextBase);
             sendJson(res, 200, {
               ...nextBase,
               kind: 'base',

@@ -9,7 +9,7 @@ alwaysApply: false
 ## Source of truth
 - `data/master.example.yaml` is the committed template with placeholders (for GitHub / new users).
 - `data/master.yaml` is local personal data (gitignored). Run `npm run setup` to create it from the template.
-- `data/base.yaml` is the current base CV overrides (local, gitignored).
+- `data/base.yaml` is legacy — use `data/bases/frontend-cv.yaml`, `data/bases/data-engineer-cv.yaml`, and `data/bases/fullstack-cv.yaml` instead.
 - `data/saved/*.yaml` stores temporary/saved CV variants (local, gitignored). See `data/saved/*.example.yaml` for committed examples.
 - Never invent experience, skills, titles, or metrics in master or versions.
 - Wix has two roles under one tenure block. `internalPeriod` is truth for interviews, not shown on the PDF.
@@ -23,9 +23,10 @@ alwaysApply: false
 ## Tailoring a version
 1. Create or update `data/saved/<slug>.yaml` with `extends: master`.
 2. Override only: `headline`, `summary`, `hiddenBulletIds`, `experienceBulletOrder`, `projectOrder`, `skillCategoryOrder`.
-3. Emphasize dev work first; keep at least 2 QA/release bullets unless user asks to hide them.
-4. Keep output to one A4 page — shorten wording before hiding factual bullets.
-5. User can click **Set as base** in the app to promote a saved CV to `data/base.yaml`.
+3. **Optional (rare):** `experienceAdditions` + `experienceOrder` for version-only experience (e.g. thesis). `education` override to avoid sidebar duplication. `projectOverrides` for shorter per-version project blurbs. `hiddenProjectIds` to drop projects.
+4. Emphasize dev work first; keep at least 2 QA/release bullets unless user asks to hide them.
+5. Keep output to one A4 page — shorten wording before hiding factual bullets.
+6. User can click **Set as Frontend base** to promote a saved CV to `data/bases/frontend-cv.yaml`.
 
 ## When user sends a job description
 - Match keywords to bullet/project `tags` in master.yaml.

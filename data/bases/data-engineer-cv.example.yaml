@@ -1,0 +1,18 @@
+id: data-engineer-cv
+label: Data Engineer / Analyst CV
+extends: master
+kind: base
+
+headline: Data Engineer — Python, Pipelines & Analytics
+
+summary: >
+  2–4 sentences leading with data/research work, then production engineering habits. Be honest about
+  scope — no invented ML products.
+
+projectOrder:
+  - home-co-op
+
+skillCategoryOrder:
+  - languages
+  - infrastructure
+  - testing

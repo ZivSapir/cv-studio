@@ -76,13 +76,19 @@ export type CvVersion = {
   headline?: string;
   summary?: string;
   hiddenBulletIds?: string[];
+  hiddenProjectIds?: string[];
+  projectOverrides?: Record<string, { title?: string; description?: string }>;
+  experienceAdditions?: CvExperience[];
+  experienceOrder?: string[];
   experienceBulletOrder?: Record<string, string[]>;
   projectOrder?: string[];
   skillCategoryOrder?: string[];
+  education?: CvEducation;
 };
 
 export type CvLibrary = {
-  base: CvVersion;
+  bases: CvVersion[];
+  compareBaseId: string;
   saved: CvVersion[];
 };
 

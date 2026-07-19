@@ -5,9 +5,9 @@ Local CV editor for tailoring resume versions from a single source of truth.
 ## What it does
 
 - **`data/master.yaml`** — verified facts (experience, skills, education)
-- **`data/base.yaml`** — your default CV overrides
+- **`data/bases/*.yaml`** — three base CV profiles (Frontend, Data, Full-Stack)
 - **`data/saved/*.yaml`** — job-specific tailored versions
-- Live A4 preview, base vs. draft compare, PDF export
+- Live A4 preview, compare vs Frontend base, PDF export
 
 ## Quick start
 
@@ -26,17 +26,18 @@ Save / set-as-base / delete actions write YAML files via the dev API (`npm run d
 | File | In git? | Purpose |
 |---|---|---|
 | `data/master.example.yaml` | yes | Template with placeholders — fork/start here |
-| `data/base.example.yaml` | yes | Default base version template |
+| `data/bases/*.example.yaml` | yes | Base profile templates (Frontend, Data, Full-Stack) |
 | `data/saved/*.example.yaml` | yes | Example tailored version |
 | `data/master.yaml` | **no** (local) | Your personal CV data |
-| `data/base.yaml` | **no** (local) | Your base CV |
+| `data/bases/*.yaml` | **no** (local) | Your three base CV profiles |
 | `data/saved/*.yaml` | **no** (local) | Your saved tailored CVs |
 
 ## Workflow
 
 1. Edit `data/master.yaml` with your real content (or ask Cursor to tailor a saved version for a job).
-2. Click **Reload** in the app to pick up file changes.
-3. Use **Compare** against base, then **Download PDF**.
+2. Pick a **Base CV** from the dropdown (Frontend, Data, or Full-Stack).
+3. Click **Reload** in the app to pick up file changes.
+4. Use **Compare** against the Frontend base, then **Download PDF**.
 
 ## Tailoring rules (for Cursor)
 

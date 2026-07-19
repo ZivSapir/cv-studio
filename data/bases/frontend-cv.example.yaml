@@ -1,0 +1,26 @@
+id: frontend-cv
+label: Frontend CV
+extends: master
+kind: base
+
+headline: Your Professional Title (e.g. Frontend / Mobile Engineer)
+
+summary: >
+  2–4 sentences focused on UI engineering, React/React Native, and product delivery. Mention your
+  strongest frontend angle honestly.
+
+experienceBulletOrder:
+  wix:
+    - wix-calendar
+    - wix-ds-components
+    - wix-releases
+
+projectOrder:
+  - home-co-op
+  - job-tracker
+
+skillCategoryOrder:
+  - languages
+  - infrastructure
+  - testing
+  - ai

@@ -1,0 +1,20 @@
+id: fullstack-cv
+label: Full-Stack & AI CV
+extends: master
+kind: base
+
+headline: Full-Stack Software Engineer — TypeScript & AI-Integrated Products
+
+summary: >
+  2–4 sentences on end-to-end product work (web + API + optional mobile). Mention AI integration
+  only where you actually built it.
+
+projectOrder:
+  - home-co-op
+  - job-tracker
+
+skillCategoryOrder:
+  - ai
+  - languages
+  - infrastructure
+  - testing
