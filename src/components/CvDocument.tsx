@@ -5,7 +5,7 @@ import {
   TbMail,
   TbPhone,
 } from 'react-icons/tb';
-import type { RefObject } from 'react';
+import { Fragment, type RefObject } from 'react';
 import type { ResolvedCv } from '../types/cv';
 import './CvDocument.css';
 
@@ -151,29 +151,31 @@ export const CvDocument = ({
         <div className="cv-main">
           <section className="cv-section">
             <h2 className="cv-section-title">Work Experience</h2>
-            {cv.experience.map((entry) => (
-              <div
-                key={entry.id}
-                className="cv-experience-block"
-              >
-                <p className="cv-company-line">
-                  {entry.company.toUpperCase()} | {entry.location.toUpperCase()}
-                </p>
-                <p className="cv-tenure">{entry.tenure}</p>
-                {entry.roles.map((role) => (
-                  <div
-                    key={role.title}
-                    className="cv-role-block"
-                  >
-                    <h3 className="cv-role-title">{role.title.toUpperCase()}</h3>
-                    <ul className="cv-bullet-list">
-                      {role.bullets.map((bullet) => (
-                        <li key={bullet.id}>{renderBulletText(bullet.text)}</li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              </div>
+            {cv.experience.map((entry, index) => (
+              <Fragment key={entry.id}>
+                {index > 0 ? (
+                  <hr className="cv-experience-divider" />
+                ) : null}
+                <div className="cv-experience-block">
+                  <p className="cv-company-line">
+                    {entry.company.toUpperCase()} | {entry.location.toUpperCase()}
+                  </p>
+                  <p className="cv-tenure">{entry.tenure}</p>
+                  {entry.roles.map((role) => (
+                    <div
+                      key={role.title}
+                      className="cv-role-block"
+                    >
+                      <h3 className="cv-role-title">{role.title.toUpperCase()}</h3>
+                      <ul className="cv-bullet-list">
+                        {role.bullets.map((bullet) => (
+                          <li key={bullet.id}>{renderBulletText(bullet.text)}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              </Fragment>
             ))}
           </section>
 

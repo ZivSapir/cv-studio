@@ -6,9 +6,8 @@ import { compareResolvedCvs } from './lib/compareCv';
 import { loadMasterCv, type CvDataSource } from './lib/loadCvData';
 import { mergeCvVersion } from './lib/mergeCvVersion';
 import {
-  applyCvPrintScale,
-  clearCvPrintScale,
-  cvNeedsOverflowWarning,
+  buildCvPdfTitle,
+  cvPageOverflows,
 } from './lib/printCv';
 import type { CvLibrary, CvVersion, ResolvedCv } from './types/cv';
 import './AppShell.css';
@@ -127,7 +126,7 @@ export const App = () => {
     }
 
     const measureOverflow = () => {
-      setOverflowsPage(cvNeedsOverflowWarning(pageElement));
+      setOverflowsPage(cvPageOverflows(pageElement));
     };
 
     measureOverflow();
@@ -144,19 +143,24 @@ export const App = () => {
 
   const handleDownloadPdf = () => {
     const pageElement = pageRef.current;
+    const previousTitle = document.title;
+    const pdfTitle = resolvedCv
+      ? buildCvPdfTitle(resolvedCv.name, resolvedCv.headline)
+      : 'CV';
+    document.title = pdfTitle;
+
+    const cleanup = () => {
+      document.title = previousTitle;
+      window.removeEventListener('afterprint', cleanup);
+    };
+
+    window.addEventListener('afterprint', cleanup);
+
     if (!pageElement) {
       window.print();
       return;
     }
 
-    applyCvPrintScale(pageElement);
-
-    const cleanup = () => {
-      clearCvPrintScale(pageElement);
-      window.removeEventListener('afterprint', cleanup);
-    };
-
-    window.addEventListener('afterprint', cleanup);
     requestAnimationFrame(() => window.print());
   };
 
@@ -418,7 +422,7 @@ export const App = () => {
           className="app-warning"
           role="status"
         >
-          This version overflows one page. Ask Cursor to shorten bullets or hide lower-priority items.
+          Content overflows the page. Shorten the summary or bullets, or hide lower-priority items.
         </p>
       ) : null}
 
