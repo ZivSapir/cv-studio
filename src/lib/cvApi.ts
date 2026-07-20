@@ -1,5 +1,9 @@
 import type { CvDataSource } from './loadCvData';
-import type { CvLibrary, CvVersion } from '../types/cv';
+import type {
+  CvBaseProfileId,
+  CvLibrary,
+  CvVersion,
+} from '../types/cv';
 
 async function parseJsonResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
@@ -37,7 +41,25 @@ export async function saveCvCopy(
   return parseJsonResponse<CvVersion>(response);
 }
 
-export async function promoteCvToBase(sourceId: string): Promise<CvVersion> {
+export async function updateCvVersion(
+  id: string,
+  version: CvVersion,
+): Promise<CvVersion> {
+  const response = await fetch(`/api/cv/version/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(version),
+  });
+
+  return parseJsonResponse<CvVersion>(response);
+}
+
+export async function promoteCvToBase(
+  sourceId: string,
+  targetBaseId: CvBaseProfileId,
+): Promise<CvVersion> {
   const response = await fetch('/api/cv/base', {
     method: 'POST',
     headers: {
@@ -45,6 +67,7 @@ export async function promoteCvToBase(sourceId: string): Promise<CvVersion> {
     },
     body: JSON.stringify({
       sourceId,
+      targetBaseId,
     }),
   });
 

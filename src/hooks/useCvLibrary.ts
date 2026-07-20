@@ -4,9 +4,14 @@ import {
   fetchCvLibrary,
   promoteCvToBase,
   saveCvCopy,
+  updateCvVersion,
 } from '../lib/cvApi';
 import type { CvDataSource } from '../lib/loadCvData';
-import type { CvLibrary, CvVersion } from '../types/cv';
+import type {
+  CvBaseProfileId,
+  CvLibrary,
+  CvVersion,
+} from '../types/cv';
 
 type UseCvLibraryResult = {
   library: CvLibrary | null;
@@ -18,7 +23,11 @@ type UseCvLibraryResult = {
     sourceId: string,
     notes?: string,
   ) => Promise<CvVersion>;
-  setAsBase: (sourceId: string) => Promise<CvVersion>;
+  updateVersion: (version: CvVersion) => Promise<CvVersion>;
+  setAsBase: (
+    sourceId: string,
+    targetBaseId: CvBaseProfileId,
+  ) => Promise<CvVersion>;
   removeSaved: (id: string) => Promise<void>;
 };
 
@@ -58,8 +67,17 @@ export function useCvLibrary(source: CvDataSource): UseCvLibraryResult {
     return savedVersion;
   }, [reloadLibrary]);
 
-  const setAsBase = useCallback(async (sourceId: string) => {
-    const baseVersion = await promoteCvToBase(sourceId);
+  const updateVersion = useCallback(async (version: CvVersion) => {
+    const savedVersion = await updateCvVersion(version.id, version);
+    await reloadLibrary();
+    return savedVersion;
+  }, [reloadLibrary]);
+
+  const setAsBase = useCallback(async (
+    sourceId: string,
+    targetBaseId: CvBaseProfileId,
+  ) => {
+    const baseVersion = await promoteCvToBase(sourceId, targetBaseId);
     await reloadLibrary();
     return baseVersion;
   }, [reloadLibrary]);
@@ -75,6 +93,7 @@ export function useCvLibrary(source: CvDataSource): UseCvLibraryResult {
     error,
     reloadLibrary,
     saveCopy,
+    updateVersion,
     setAsBase,
     removeSaved,
   };

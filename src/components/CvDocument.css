@@ -209,6 +209,91 @@
   -webkit-print-color-adjust: exact;
 }
 
+.cv-block-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 2mm;
+}
+
+.cv-block-header-text {
+  min-width: 0;
+  flex: 1;
+}
+
+.cv-edit-controls {
+  display: flex;
+  flex-shrink: 0;
+  gap: 1px;
+}
+
+.cv-edit-control-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid #bcccdc;
+  border-radius: 4px;
+  background: #f0f4f8;
+  color: #334e68;
+  cursor: pointer;
+}
+
+.cv-edit-control-button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.cv-edit-control-button:not(:disabled):hover {
+  background: #d9e2ec;
+}
+
+.cv-edit-input,
+.cv-edit-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  border: 1px solid #9fb3c8;
+  border-radius: 4px;
+  background: #fffef7;
+  padding: 1mm 1.5mm;
+  resize: vertical;
+}
+
+.cv-edit-input.cv-headline {
+  font-style: italic;
+}
+
+.cv-edit-bullet-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5mm;
+}
+
+.cv-edit-bullet-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.cv-page-editing .cv-bullet-list {
+  list-style: none;
+  margin-left: 0;
+}
+
+.cv-page-editing .cv-bullet-list > li {
+  margin-top: 1.5mm;
+}
+
+@media print {
+  .cv-edit-controls {
+    display: none !important;
+  }
+}
+
 .cv-company-line {
   margin: 0;
   font-weight: 700;

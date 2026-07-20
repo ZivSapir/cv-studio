@@ -13,6 +13,7 @@ alwaysApply: false
 - `data/saved/*.yaml` stores temporary/saved CV variants (local, gitignored). See `data/saved/*.example.yaml` for committed examples.
 - Never invent experience, skills, titles, or metrics in master or versions.
 - Wix has two roles under one tenure block. `internalPeriod` is truth for interviews, not shown on the PDF.
+- Preview **Edit mode** writes to the active base/saved YAML only — never to `master.yaml` from the UI.
 
 ## Voice & content rules
 - **No em dashes (`—`)** in CV copy (headline, summary, bullets, projects, education). They render as an overly wide "AI" dash in PDF. Use a comma, colon, semicolon, or a regular hyphen `-` instead (e.g. `Engineer - Platform`, not `Engineer — Platform`).
@@ -24,12 +25,17 @@ alwaysApply: false
 
 ## Tailoring a version
 1. Create or update `data/saved/<slug>.yaml` with `extends: master`.
-2. Override only: `headline`, `summary`, `hiddenBulletIds`, `experienceBulletOrder`, `projectOrder`, `skillCategoryOrder`.
-3. **Optional (rare):** `experienceAdditions` + `experienceOrder` for version-only experience (e.g. thesis). `education` override to avoid sidebar duplication. `projectOverrides` for shorter per-version project blurbs. `hiddenProjectIds` to drop projects.
+2. Override with: `headline`, `summary`, `hiddenBulletIds`, `hiddenProjectIds`, `bulletOverrides`, `experienceBulletOrder`, `projectOrder`, `skillCategoryOrder`, `projectOverrides`.
+3. **Optional (rare):** `experienceAdditions` + `experienceOrder` for version-only experience (e.g. thesis). `education` override to avoid sidebar duplication.
 4. Emphasize dev work first; keep all three QA/release bullets when space allows.
 5. Keep output to one A4 page — shorten wording before hiding factual bullets.
 6. Confirm with the user before dropping in-progress project features they intend to ship (e.g. Google Calendar sync).
-7. User can click **Set as Frontend base** to promote a saved CV to `data/bases/frontend-cv.yaml`.
+7. User can use **Save as base…** to promote a version onto a chosen base (`frontend-cv`, `data-engineer-cv`, or `fullstack-cv`).
+
+## Preview Edit mode
+- Edit the selected base or saved CV in the preview; **Save edits** persists via `PUT /api/cv/version/:id`.
+- Do not teach the UI to edit `master.yaml`. Shared fact changes belong in master via Cursor/file edit.
+- After polishing a tailored CV, promote with **Save as base…** if that profile should become the new default for that track.
 
 ## When user sends a job description
 - Match keywords to bullet/project `tags` in master.yaml.
@@ -37,4 +43,4 @@ alwaysApply: false
 - Rewrite headline + summary to align with the role; do not claim years of dev beyond the developer `internalPeriod`.
 - Frame QA/release as a strength (quality, releases, production), not as the primary identity for dev roles.
 - Summarize changes for the user: what moved up, what was hidden, what was rewritten.
-- Tell the user to click **Reload** in cv-studio after file edits.
+- Tell the user to click **Reload** in cv-studio after file edits (or use Edit mode on that saved version).

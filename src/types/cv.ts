@@ -77,6 +77,7 @@ export type CvVersion = {
   summary?: string;
   hiddenBulletIds?: string[];
   hiddenProjectIds?: string[];
+  bulletOverrides?: Record<string, string>;
   projectOverrides?: Record<string, { title?: string; description?: string }>;
   experienceAdditions?: CvExperience[];
   experienceOrder?: string[];
@@ -85,6 +86,17 @@ export type CvVersion = {
   skillCategoryOrder?: string[];
   education?: CvEducation;
 };
+
+export type CvBaseProfileId =
+  | 'frontend-cv'
+  | 'data-engineer-cv'
+  | 'fullstack-cv';
+
+export const CV_BASE_PROFILE_IDS: CvBaseProfileId[] = [
+  'frontend-cv',
+  'data-engineer-cv',
+  'fullstack-cv',
+];
 
 export type CvLibrary = {
   bases: CvVersion[];

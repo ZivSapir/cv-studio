@@ -40,6 +40,7 @@ type CvVersionFile = {
   summary?: string;
   hiddenBulletIds?: string[];
   hiddenProjectIds?: string[];
+  bulletOverrides?: Record<string, string>;
   projectOverrides?: Record<string, { title?: string; description?: string }>;
   experienceAdditions?: CvExperienceFile[];
   experienceOrder?: string[];
@@ -214,6 +215,7 @@ function stripVersionMeta(version: CvVersionFile): Omit<CvVersionFile, 'id' | 'l
     summary: version.summary,
     hiddenBulletIds: version.hiddenBulletIds,
     hiddenProjectIds: version.hiddenProjectIds,
+    bulletOverrides: version.bulletOverrides,
     projectOverrides: version.projectOverrides,
     experienceAdditions: version.experienceAdditions,
     experienceOrder: version.experienceOrder,
@@ -222,6 +224,38 @@ function stripVersionMeta(version: CvVersionFile): Omit<CvVersionFile, 'id' | 'l
     skillCategoryOrder: version.skillCategoryOrder,
     education: version.education,
   };
+}
+
+function isBaseProfileId(id: string): boolean {
+  return BASE_PROFILE_ORDER.includes(id);
+}
+
+async function resolveLocalVersionPath(
+  id: string,
+): Promise<{ filePath: string; kind: 'base' | 'saved' } | null> {
+  const basePath = getBaseFilePath(id);
+
+  try {
+    await fs.access(basePath);
+    return {
+      filePath: basePath,
+      kind: 'base',
+    };
+  } catch {
+    // not a base file
+  }
+
+  const savedPath = path.join(SAVED_DIR, `${id}.yaml`);
+
+  try {
+    await fs.access(savedPath);
+    return {
+      filePath: savedPath,
+      kind: 'saved',
+    };
+  } catch {
+    return null;
+  }
 }
 
 async function uniqueSavedPath(id: string): Promise<string> {
@@ -307,10 +341,58 @@ export function cvApiPlugin(): Plugin {
             return;
           }
 
+          if (req.method === 'PUT' && pathname.startsWith('/api/cv/version/')) {
+            const id = pathname.replace('/api/cv/version/', '');
+
+            if (!id) {
+              sendJson(res, 400, { error: 'Missing version id.' });
+              return;
+            }
+
+            const resolved = await resolveLocalVersionPath(id);
+
+            if (!resolved) {
+              sendJson(res, 404, { error: 'Version not found.' });
+              return;
+            }
+
+            const existing = await readYamlFile<CvVersionFile>(resolved.filePath);
+            const body = JSON.parse(await readBody(req)) as Partial<CvVersionFile>;
+            const nextVersion: CvVersionFile = {
+              ...existing,
+              ...stripVersionMeta({
+                ...existing,
+                ...body,
+                extends: 'master',
+              }),
+              id: existing.id,
+              label: typeof body.label === 'string' && body.label.trim()
+                ? body.label.trim()
+                : existing.label,
+              createdAt: existing.createdAt,
+              updatedAt: new Date().toISOString(),
+            };
+
+            await writeYamlFile(resolved.filePath, nextVersion);
+            sendJson(res, 200, {
+              ...nextVersion,
+              kind: resolved.kind,
+            });
+            return;
+          }
+
           if (req.method === 'POST' && pathname === '/api/cv/base') {
             const body = JSON.parse(await readBody(req)) as {
               sourceId: string;
+              targetBaseId: string;
             };
+
+            if (!body.targetBaseId || !isBaseProfileId(body.targetBaseId)) {
+              sendJson(res, 400, {
+                error: 'targetBaseId must be frontend-cv, data-engineer-cv, or fullstack-cv.',
+              });
+              return;
+            }
 
             const source = await findLocalVersion(body.sourceId);
 
@@ -319,18 +401,23 @@ export function cvApiPlugin(): Plugin {
               return;
             }
 
-            const compareBase = (await listBaseVersions('local')).find(
-              (entry) => entry.id === COMPARE_BASE_ID,
+            const existingTarget = (await listBaseVersions('local')).find(
+              (entry) => entry.id === body.targetBaseId,
             );
+            const defaultLabels: Record<string, string> = {
+              'frontend-cv': 'Frontend CV',
+              'data-engineer-cv': 'Data Engineer / Analyst CV',
+              'fullstack-cv': 'Full-Stack & AI CV',
+            };
             const nextBase: CvVersionFile = {
               ...stripVersionMeta(source),
-              id: COMPARE_BASE_ID,
-              label: compareBase?.label ?? 'Frontend CV',
+              id: body.targetBaseId,
+              label: existingTarget?.label ?? defaultLabels[body.targetBaseId] ?? body.targetBaseId,
               updatedAt: new Date().toISOString(),
             };
 
             await ensureBasesDir();
-            await writeYamlFile(getBaseFilePath(COMPARE_BASE_ID), nextBase);
+            await writeYamlFile(getBaseFilePath(body.targetBaseId), nextBase);
             sendJson(res, 200, {
               ...nextBase,
               kind: 'base',

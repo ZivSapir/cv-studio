@@ -7,7 +7,7 @@ Local CV editor for tailoring resume versions from a single source of truth.
 - **`data/master.yaml`** — verified facts (experience, skills, education)
 - **`data/bases/*.yaml`** — three base CV profiles (Frontend, Data, Full-Stack)
 - **`data/saved/*.yaml`** — job-specific tailored versions
-- Live A4 preview, compare vs Frontend base, PDF export
+- Live A4 preview, **Edit mode** (YAML-backed), compare vs Frontend base, PDF export
 
 ## Quick start
 
@@ -19,7 +19,7 @@ npm run dev
 
 Open http://localhost:5173/
 
-Save / set-as-base / delete actions write YAML files via the dev API (`npm run dev` only).
+Save / edit / set-as-base / delete actions write YAML files via the dev API (`npm run dev` only).
 
 ## Repository layout
 
@@ -35,9 +35,17 @@ Save / set-as-base / delete actions write YAML files via the dev API (`npm run d
 ## Workflow
 
 1. Edit `data/master.yaml` with your real content (or ask Cursor to tailor a saved version for a job).
-2. Pick a **Base CV** from the dropdown (Frontend, Data, or Full-Stack).
-3. Click **Reload** in the app to pick up file changes.
+2. Pick a **Base CV** or saved version from the dropdown.
+3. Click **Reload** in the app to pick up file changes, or use **Edit** to tweak the active version in the preview.
 4. Use **Compare** against the Frontend base, then **Download PDF**.
+
+### Edit mode (preview)
+
+- **Edit** toggles strict inline editing for the **currently selected** base or saved CV only.
+- Edits update that version’s YAML on **Save edits** (headline, summary, bullet text via `bulletOverrides`, project overrides, reorder/hide).
+- Does **not** write to `master.yaml`. To refresh a base profile, use **Save as base…** and choose Frontend / Data / Full-Stack.
+- Exit Edit (Save or Cancel) before downloading PDF.
+- Personal `data/*.yaml` files are gitignored — back them up yourself if you need a content revert point.
 
 ## Tailoring rules (for Cursor)
 

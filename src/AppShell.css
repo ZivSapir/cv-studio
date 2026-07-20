@@ -183,7 +183,61 @@ body {
   padding-bottom: 48px;
 }
 
+.app-hidden-panel {
+  max-width: 1200px;
+  margin: 0 auto 16px;
+  padding: 12px 14px;
+  border: 1px solid #d9e2ec;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.app-hidden-panel-title {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #334e68;
+}
+
+.app-hidden-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.app-hidden-list + .app-hidden-list {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.app-hidden-list li {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.app-hidden-item-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  color: #486581;
+  line-height: 1.4;
+}
+
+.app-button-small {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
 @media print {
+  .app-hidden-panel {
+    display: none !important;
+  }
+
   :root {
     background: #ffffff;
   }

@@ -1,17 +1,49 @@
+import { Fragment, type RefObject } from 'react';
 import type { IconType } from 'react-icons';
 import {
   TbBrandGithub,
   TbBrandLinkedin,
+  TbChevronDown,
+  TbChevronUp,
+  TbEyeOff,
   TbMail,
   TbPhone,
 } from 'react-icons/tb';
-import { Fragment, type RefObject } from 'react';
 import type { ResolvedCv } from '../types/cv';
 import './CvDocument.css';
+
+type CvDocumentEditActions = {
+  onHeadlineChange: (value: string) => void;
+  onSummaryChange: (value: string) => void;
+  onBulletTextChange: (bulletId: string, text: string) => void;
+  onProjectTitleChange: (projectId: string, title: string) => void;
+  onProjectDescriptionChange: (
+    projectId: string,
+    description: string,
+  ) => void;
+  onTextCommit: () => void;
+  onMoveExperience: (
+    experienceId: string,
+    direction: 'up' | 'down',
+  ) => void;
+  onMoveBullet: (
+    experienceId: string,
+    bulletId: string,
+    direction: 'up' | 'down',
+  ) => void;
+  onMoveProject: (
+    projectId: string,
+    direction: 'up' | 'down',
+  ) => void;
+  onHideBullet: (bulletId: string) => void;
+  onHideProject: (projectId: string) => void;
+};
 
 type CvDocumentProps = {
   cv: ResolvedCv;
   pageRef?: RefObject<HTMLElement | null>;
+  isEditing?: boolean;
+  editActions?: CvDocumentEditActions;
 };
 
 const renderBulletText = (text: string) => {
@@ -53,20 +85,99 @@ const ContactIcon = ({ name }: ContactIconProps) => {
   );
 };
 
+type EditControlsProps = {
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
+  onHide?: () => void;
+  moveUpDisabled?: boolean;
+  moveDownDisabled?: boolean;
+};
+
+const EditControls = ({
+  onMoveUp,
+  onMoveDown,
+  onHide,
+  moveUpDisabled,
+  moveDownDisabled,
+}: EditControlsProps) => {
+  return (
+    <div className="cv-edit-controls">
+      {onMoveUp ? (
+        <button
+          type="button"
+          className="cv-edit-control-button"
+          aria-label="Move up"
+          disabled={moveUpDisabled}
+          onClick={onMoveUp}
+        >
+          <TbChevronUp />
+        </button>
+      ) : null}
+      {onMoveDown ? (
+        <button
+          type="button"
+          className="cv-edit-control-button"
+          aria-label="Move down"
+          disabled={moveDownDisabled}
+          onClick={onMoveDown}
+        >
+          <TbChevronDown />
+        </button>
+      ) : null}
+      {onHide ? (
+        <button
+          type="button"
+          className="cv-edit-control-button"
+          aria-label="Hide"
+          onClick={onHide}
+        >
+          <TbEyeOff />
+        </button>
+      ) : null}
+    </div>
+  );
+};
+
 export const CvDocument = ({
   cv,
   pageRef,
+  isEditing = false,
+  editActions,
 }: CvDocumentProps) => {
+  const experienceCount = cv.experience.length;
+  const projectCount = cv.projects.length;
+
   return (
     <article
       ref={pageRef}
-      className="cv-page"
+      className={isEditing ? 'cv-page cv-page-editing' : 'cv-page'}
       aria-label={`CV version ${cv.versionLabel}`}
     >
       <header className="cv-header">
         <h1 className="cv-name">{cv.name.toUpperCase()}</h1>
-        <p className="cv-headline">{cv.headline}</p>
-        <p className="cv-summary">{cv.summary}</p>
+        {isEditing && editActions ? (
+          <input
+            className="cv-headline cv-edit-input"
+            value={cv.headline}
+            aria-label="Headline"
+            onChange={(event) => editActions.onHeadlineChange(event.target.value)}
+            onBlur={() => editActions.onTextCommit()}
+          />
+        ) : (
+          <p className="cv-headline">{cv.headline}</p>
+        )}
+        {isEditing && editActions ? (
+          <textarea
+            className="cv-summary cv-edit-textarea"
+            value={cv.summary}
+            aria-label="Summary"
+            rows={4}
+            onChange={(event) => editActions.onSummaryChange(event.target.value)}
+            onBlur={() => editActions.onTextCommit()}
+          />
+        ) : (
+          <p className="cv-summary">{cv.summary}</p>
+        )}
       </header>
 
       <div className="cv-columns">
@@ -157,23 +268,90 @@ export const CvDocument = ({
                   <hr className="cv-experience-divider" />
                 ) : null}
                 <div className="cv-experience-block">
-                  <p className="cv-company-line">
-                    {entry.company.toUpperCase()} | {entry.location.toUpperCase()}
-                  </p>
-                  <p className="cv-tenure">{entry.tenure}</p>
-                  {entry.roles.map((role) => (
-                    <div
-                      key={role.title}
-                      className="cv-role-block"
-                    >
-                      <h3 className="cv-role-title">{role.title.toUpperCase()}</h3>
-                      <ul className="cv-bullet-list">
-                        {role.bullets.map((bullet) => (
-                          <li key={bullet.id}>{renderBulletText(bullet.text)}</li>
-                        ))}
-                      </ul>
+                  <div className="cv-block-header">
+                    <div className="cv-block-header-text">
+                      <p className="cv-company-line">
+                        {entry.company.toUpperCase()} | {entry.location.toUpperCase()}
+                      </p>
+                      <p className="cv-tenure">{entry.tenure}</p>
                     </div>
-                  ))}
+                    {isEditing && editActions ? (
+                      <EditControls
+                        moveUpDisabled={index === 0}
+                        moveDownDisabled={index === experienceCount - 1}
+                        onMoveUp={() => editActions.onMoveExperience(entry.id, 'up')}
+                        onMoveDown={() => editActions.onMoveExperience(entry.id, 'down')}
+                      />
+                    ) : null}
+                  </div>
+                  {(() => {
+                    const experienceBullets = entry.roles.flatMap((role) => role.bullets);
+                    const bulletIndexById = new Map(
+                      experienceBullets.map((bullet, bulletIndex) => [
+                        bullet.id,
+                        bulletIndex,
+                      ]),
+                    );
+
+                    return entry.roles.map((role) => (
+                      <div
+                        key={role.title}
+                        className="cv-role-block"
+                      >
+                        <h3 className="cv-role-title">{role.title.toUpperCase()}</h3>
+                        <ul className="cv-bullet-list">
+                          {role.bullets.map((bullet) => {
+                            const bulletIndex = bulletIndexById.get(bullet.id) ?? 0;
+
+                            return (
+                              <li key={bullet.id}>
+                                {isEditing && editActions ? (
+                                  <div className="cv-edit-bullet-row">
+                                    <textarea
+                                      className="cv-edit-textarea cv-edit-bullet-input"
+                                      value={bullet.text}
+                                      aria-label={`Bullet ${bullet.id}`}
+                                      rows={3}
+                                      onChange={(event) => {
+                                        editActions.onBulletTextChange(
+                                          bullet.id,
+                                          event.target.value,
+                                        );
+                                      }}
+                                      onBlur={() => editActions.onTextCommit()}
+                                    />
+                                    <EditControls
+                                      moveUpDisabled={bulletIndex === 0}
+                                      moveDownDisabled={
+                                        bulletIndex === experienceBullets.length - 1
+                                      }
+                                      onMoveUp={() => {
+                                        editActions.onMoveBullet(
+                                          entry.id,
+                                          bullet.id,
+                                          'up',
+                                        );
+                                      }}
+                                      onMoveDown={() => {
+                                        editActions.onMoveBullet(
+                                          entry.id,
+                                          bullet.id,
+                                          'down',
+                                        );
+                                      }}
+                                      onHide={() => editActions.onHideBullet(bullet.id)}
+                                    />
+                                  </div>
+                                ) : (
+                                  renderBulletText(bullet.text)
+                                )}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    ));
+                  })()}
                 </div>
               </Fragment>
             ))}
@@ -181,13 +359,54 @@ export const CvDocument = ({
 
           <section className="cv-section">
             <h2 className="cv-section-title">Projects</h2>
-            {cv.projects.map((project) => (
+            {cv.projects.map((project, index) => (
               <div
                 key={project.id}
                 className="cv-project-block"
               >
-                <h3 className="cv-project-title">{project.title}</h3>
-                <p className="cv-project-description">{project.description}</p>
+                {isEditing && editActions ? (
+                  <div className="cv-edit-project">
+                    <div className="cv-block-header">
+                      <input
+                        className="cv-project-title cv-edit-input"
+                        value={project.title}
+                        aria-label={`Project title ${project.id}`}
+                        onChange={(event) => {
+                          editActions.onProjectTitleChange(
+                            project.id,
+                            event.target.value,
+                          );
+                        }}
+                        onBlur={() => editActions.onTextCommit()}
+                      />
+                      <EditControls
+                        moveUpDisabled={index === 0}
+                        moveDownDisabled={index === projectCount - 1}
+                        onMoveUp={() => editActions.onMoveProject(project.id, 'up')}
+                        onMoveDown={() => editActions.onMoveProject(project.id, 'down')}
+                        onHide={() => editActions.onHideProject(project.id)}
+                      />
+                    </div>
+                    <textarea
+                      className="cv-project-description cv-edit-textarea"
+                      value={project.description}
+                      aria-label={`Project description ${project.id}`}
+                      rows={3}
+                      onChange={(event) => {
+                        editActions.onProjectDescriptionChange(
+                          project.id,
+                          event.target.value,
+                        );
+                      }}
+                      onBlur={() => editActions.onTextCommit()}
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <h3 className="cv-project-title">{project.title}</h3>
+                    <p className="cv-project-description">{project.description}</p>
+                  </>
+                )}
               </div>
             ))}
           </section>

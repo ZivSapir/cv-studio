@@ -24,21 +24,53 @@ function orderByIds<T extends { id: string }>(
   return [...ordered, ...remainder];
 }
 
-function filterExperience(
+function applyBulletOverrides(
   experience: CvExperience[],
-  hiddenBulletIds: Set<string>,
-  bulletOrderByExperience: Record<string, string[]> | undefined,
+  bulletOverrides: Record<string, string> | undefined,
 ): CvExperience[] {
+  if (!bulletOverrides || Object.keys(bulletOverrides).length === 0) {
+    return experience;
+  }
+
   return experience.map((entry) => ({
     ...entry,
     roles: entry.roles.map((role) => ({
       ...role,
-      bullets: orderByIds(
-        role.bullets.filter((bullet) => !hiddenBulletIds.has(bullet.id)),
-        bulletOrderByExperience?.[entry.id],
-      ),
+      bullets: role.bullets.map((bullet) => {
+        const overrideText = bulletOverrides[bullet.id];
+
+        if (overrideText === undefined) {
+          return bullet;
+        }
+
+        return {
+          ...bullet,
+          text: overrideText,
+        };
+      }),
     })),
   }));
+}
+
+function filterExperience(
+  experience: CvExperience[],
+  hiddenBulletIds: Set<string>,
+  bulletOrderByExperience: Record<string, string[]> | undefined,
+  bulletOverrides: Record<string, string> | undefined,
+): CvExperience[] {
+  return applyBulletOverrides(
+    experience.map((entry) => ({
+      ...entry,
+      roles: entry.roles.map((role) => ({
+        ...role,
+        bullets: orderByIds(
+          role.bullets.filter((bullet) => !hiddenBulletIds.has(bullet.id)),
+          bulletOrderByExperience?.[entry.id],
+        ),
+      })),
+    })),
+    bulletOverrides,
+  );
 }
 
 function buildExperience(
@@ -47,16 +79,19 @@ function buildExperience(
 ): CvExperience[] {
   const hiddenBulletIds = new Set(version.hiddenBulletIds ?? []);
   const bulletOrder = version.experienceBulletOrder;
+  const bulletOverrides = version.bulletOverrides;
 
   const fromMaster = filterExperience(
     master.experience,
     hiddenBulletIds,
     bulletOrder,
+    bulletOverrides,
   );
   const additions = filterExperience(
     version.experienceAdditions ?? [],
     hiddenBulletIds,
     bulletOrder,
+    bulletOverrides,
   );
 
   return orderByIds(
