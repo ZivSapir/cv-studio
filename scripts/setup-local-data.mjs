@@ -36,3 +36,4 @@ if (!fs.existsSync(savedExampleTarget)) {
 }
 
 console.log('Done. Run npm run dev to preview.');
+console.log('Tip: edit data/master.yaml with your real CV, then open the folder in Cursor to tailor job-specific versions.');

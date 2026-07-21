@@ -3,16 +3,22 @@ label: Data Engineer / Analyst CV
 extends: master
 kind: base
 
-headline: Data Engineer — Python, Pipelines & Analytics
+headline: Data Engineer - Python, Pipelines & Analytics
 
 summary: >
-  2–4 sentences leading with data/research work, then production engineering habits. Be honest about
-  scope — no invented ML products.
+  2-4 sentences leading with data/research work, then production engineering habits. Be honest about
+  scope - no invented ML products.
+
+experienceBulletOrder:
+  acme:
+    - acme-tooling
+    - acme-delivery
+    - acme-quality
 
 projectOrder:
-  - home-co-op
+  - project-alpha
 
 skillCategoryOrder:
   - languages
   - infrastructure
-  - testing
+  - practices
