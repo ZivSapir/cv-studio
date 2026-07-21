@@ -1,0 +1,41 @@
+About the role — Maple Analytics (fictional company)
+
+Maple Analytics builds B2B workflow software for operations teams. This posting is a demo job description for CV Studio tutorials — not a real employer.
+
+Senior Backend Engineer
+
+Location: Remote (US time zones, optional quarterly onsite)
+
+About the team
+
+We are looking for a senior backend engineer to join our Platform squad. You will design and ship
+API services that power customer dashboards, billing integrations, and internal admin tools. You
+will work with product managers, frontend engineers, and data analysts in two-week sprints.
+
+What you will do
+
+- Design and implement TypeScript microservices (NestJS) backed by PostgreSQL
+- Own features end-to-end: API design, migrations, tests, deployment, and monitoring
+- Improve CI/CD pipelines and developer experience for a team of eight engineers
+- Mentor junior developers through code review and pairing
+- Collaborate with frontend on contract-first REST APIs and error handling
+
+What we are looking for
+
+- 5+ years of professional software engineering experience
+- Strong TypeScript and Node.js; production experience with NestJS or similar frameworks
+- Solid SQL and schema design (PostgreSQL preferred)
+- Experience with Docker, automated testing, and trunk-based delivery
+- Clear written communication and pragmatic tradeoffs in a product-led environment
+
+Nice to have
+
+- AWS (ECS, S3, RDS)
+- Event-driven patterns (queues, webhooks)
+- Previous startup or B2B SaaS experience
+- Open-source contributions
+
+Notes for demo recording
+
+- Company name "Maple Analytics" is fictional.
+- Use this text in Tailor with AI → Copy prompt after importing the Alex Chen demo master.

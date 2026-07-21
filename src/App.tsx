@@ -122,6 +122,15 @@ export const App = () => {
   const needsOnboarding = !isExampleMode && Boolean(master && isPlaceholderMaster(master));
 
   useEffect(() => {
+    if (needsOnboarding) {
+      return;
+    }
+
+    setShowMasterImportPanel(false);
+    setShowOnboarding(false);
+  }, [needsOnboarding]);
+
+  useEffect(() => {
     setSelectedVersionId(DEFAULT_VERSION_ID);
     setMode('preview');
     setIsEditing(false);
@@ -309,7 +318,45 @@ export const App = () => {
     clearEditHistory();
   };
 
-  const handleSaveEdits = async () => {
+  const handleSaveEditAsCopy = async () => {
+    if (!draftVersion) {
+      return;
+    }
+
+    commitText();
+
+    const label = window.prompt(
+      'Name for this saved CV:',
+      `${draftVersion.label} copy`,
+    )?.trim();
+
+    if (!label) {
+      return;
+    }
+
+    setIsSavingEdits(true);
+    setActionError(null);
+
+    try {
+      const saved = await importSavedVersion({
+        ...versionPayloadForSave(draftVersion),
+        label,
+      });
+      setSelectedVersionId(saved.id);
+      setIsEditing(false);
+      clearEditHistory();
+      setActionMessage(`Saved as copy: "${saved.label}".`);
+    } catch (saveError) {
+      const message = saveError instanceof Error
+        ? saveError.message
+        : 'Failed to save copy.';
+      setActionError(message);
+    } finally {
+      setIsSavingEdits(false);
+    }
+  };
+
+  const handleSaveToCurrentVersion = async () => {
     if (!draftVersion) {
       return;
     }
@@ -323,7 +370,7 @@ export const App = () => {
       setSelectedVersionId(saved.id);
       setIsEditing(false);
       clearEditHistory();
-      setActionMessage(`Saved edits to "${saved.label}".`);
+      setActionMessage(`Saved "${saved.label}".`);
     } catch (saveError) {
       const message = saveError instanceof Error
         ? saveError.message
@@ -332,6 +379,22 @@ export const App = () => {
     } finally {
       setIsSavingEdits(false);
     }
+  };
+
+  const handleUpdateBaseFromEdits = async () => {
+    if (!draftVersion) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Update base CV "${draftVersion.label}" in place? This replaces the current base.`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    await handleSaveToCurrentVersion();
   };
 
   const handleDownloadPdf = () => {
@@ -549,6 +612,8 @@ export const App = () => {
 
       await importBackup(backup);
       setSelectedVersionId(DEFAULT_VERSION_ID);
+      setShowMasterImportPanel(false);
+      setShowOnboarding(false);
       setActionMessage('Backup imported.');
     } catch (importError) {
       const message = importError instanceof Error
@@ -573,6 +638,8 @@ export const App = () => {
       }
 
       await importMaster(nextMaster);
+      setShowMasterImportPanel(false);
+      setShowOnboarding(false);
       setActionMessage('Master CV imported.');
     } catch (importError) {
       const message = importError instanceof Error
@@ -585,8 +652,18 @@ export const App = () => {
   const handleResetToExamples = async () => {
     setActionError(null);
 
+    const exportFirst = window.confirm(
+      'Reset deletes ALL CV data stored in this browser — master, bases, and saved versions.\n\n'
+      + 'This cannot be undone. Export a backup first if you might need this data again.\n\n'
+      + 'Click OK to reset anyway, or Cancel to go back and export.',
+    );
+
+    if (!exportFirst) {
+      return;
+    }
+
     const confirmed = window.confirm(
-      'Reset to the default example CV (Main CV only)? This replaces all browser-stored data.',
+      'Last check: permanently delete everything and restore the example CV?',
     );
 
     if (!confirmed) {
@@ -596,6 +673,8 @@ export const App = () => {
     try {
       await resetToExamples();
       setSelectedVersionId(DEFAULT_VERSION_ID);
+      setShowMasterImportPanel(false);
+      setShowOnboarding(false);
       setActionMessage('Reset to example data.');
     } catch (resetError) {
       const message = resetError instanceof Error
@@ -751,6 +830,8 @@ export const App = () => {
 
   const isCompareBaseSelected = selectedVersion.id === compareBase?.id;
   const isSavedSelected = selectedVersion.kind === 'saved';
+  const isEditingBase = selectedVersion.kind === 'base'
+    || library.bases.some((base) => base.id === selectedVersion.id);
 
   return (
     <main className="app-shell">
@@ -882,14 +963,45 @@ export const App = () => {
               >
                 Redo
               </button>
-              <button
-                type="button"
-                className="app-button"
-                onClick={() => void handleSaveEdits()}
-                disabled={isSavingEdits}
-              >
-                {isSavingEdits ? 'Saving…' : 'Save edits'}
-              </button>
+              {isEditingBase ? (
+                <>
+                  <button
+                    type="button"
+                    className="app-button"
+                    onClick={() => void handleSaveEditAsCopy()}
+                    disabled={isSavingEdits}
+                  >
+                    {isSavingEdits ? 'Saving…' : 'Save as copy…'}
+                  </button>
+                  <button
+                    type="button"
+                    className="app-button app-button-secondary"
+                    onClick={() => void handleUpdateBaseFromEdits()}
+                    disabled={isSavingEdits}
+                  >
+                    Update base
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className="app-button"
+                    onClick={() => void handleSaveToCurrentVersion()}
+                    disabled={isSavingEdits}
+                  >
+                    {isSavingEdits ? 'Saving…' : 'Save'}
+                  </button>
+                  <button
+                    type="button"
+                    className="app-button app-button-secondary"
+                    onClick={() => void handleSaveEditAsCopy()}
+                    disabled={isSavingEdits}
+                  >
+                    Save as copy…
+                  </button>
+                </>
+              )}
               <button
                 type="button"
                 className="app-button app-button-secondary"
@@ -977,8 +1089,9 @@ export const App = () => {
           className="app-info-banner"
           role="status"
         >
-          Editing &quot;{selectedVersion.label}&quot; only. Changes write to that version on Save,
-          not master. Use Save as base… afterward if you want a base profile updated.
+          {isEditingBase
+            ? `Editing base "${selectedVersion.label}". Save as copy creates a new version; Update base overwrites this base profile.`
+            : `Editing "${selectedVersion.label}". Save updates this version. Save as copy creates a separate version.`}
         </p>
       ) : null}
 

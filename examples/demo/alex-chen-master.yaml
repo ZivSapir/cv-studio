@@ -1,0 +1,111 @@
+name: Alex Chen
+headline: Full-Stack Software Engineer
+
+summary: >
+  Software engineer with five years of experience building web applications, internal tools, and
+  API services. Strong in TypeScript, React, and Node.js, with growing backend ownership
+  (PostgreSQL, REST, Docker, CI/CD). Computer Science graduate focused on shipping reliable
+  product features in small agile teams.
+
+contact:
+  phone: "+1-555-0142"
+  email: alex.chen.demo@example.com
+  linkedin:
+    label: "LinkedIn / alex-chen-demo"
+    url: "https://www.linkedin.com/in/alex-chen-demo/"
+  portfolio:
+    label: alexchen-demo.example.com
+    url: "https://alex-chen-demo.example.com/"
+
+experience:
+  - id: meridian
+    company: Meridian Software
+    location: Portland, OR (remote-friendly)
+    tenure: March 2021 - Present
+    roles:
+      - title: Software Engineer
+        internalPeriod: "2023 – Present"
+        bullets:
+          - id: meridian-api
+            text: >
+              Backend services: Built and maintained NestJS REST APIs backed by PostgreSQL,
+              including auth, billing webhooks, and admin reporting endpoints used by 40+ B2B
+              customers.
+            tags: [typescript, nestjs, postgresql, backend, api]
+          - id: meridian-microservices
+            text: >
+              Architecture: Split a monolithic Node service into three deployable modules with
+              shared observability (structured logs, health checks), reducing release risk for
+              weekly deploys.
+            tags: [architecture, microservices, node, backend]
+          - id: meridian-frontend
+            text: >
+              Product UI: Delivered React dashboards for customer onboarding and usage analytics,
+              working closely with design on accessible forms and table-heavy admin views.
+            tags: [react, frontend, typescript, feature]
+          - id: meridian-tooling
+            text: >
+              Developer tooling: Added GitHub Actions pipelines (lint, test, Docker build) and a
+              seed script that cut local environment setup from hours to minutes for new hires.
+            tags: [ci-cd, automation, docker, developer-tools]
+      - title: Junior Software Engineer
+        internalPeriod: "2021 – 2023"
+        bullets:
+          - id: meridian-quality
+            text: >
+              Quality: Wrote Jest unit and integration tests for API handlers and maintained
+              staging smoke checks before production releases.
+            tags: [testing, jest, ci-cd, quality]
+          - id: meridian-delivery
+            text: >
+              Delivery: Shipped customer-facing fixes and small features with code review,
+              migration notes, and rollback plans discussed in sprint planning.
+            tags: [delivery, collaboration, backend]
+
+  - id: harbor
+    company: Harbor Tech Studio
+    location: Seattle, WA
+    tenure: June 2019 - February 2021
+    roles:
+      - title: Engineering Intern
+        internalPeriod: "2019 – 2021"
+        bullets:
+          - id: harbor-intern
+            text: >
+              Internship: Implemented Python scripts to clean and aggregate CSV exports, then
+              exposed summary metrics through a small Flask API consumed by a React chart page.
+            tags: [python, flask, api, internship]
+
+projects:
+  - id: taskflow-api
+    title: TaskFlow API | Side project
+    description: >
+      Personal NestJS + PostgreSQL task API with JWT auth, pagination, and OpenAPI docs; deployed
+      on a single Docker Compose stack for learning service boundaries.
+    tags: [nestjs, postgresql, backend, side-project]
+  - id: budget-buddy
+    title: Budget Buddy | Mobile
+    description: >
+      React Native expense tracker with offline-first local storage and monthly category charts;
+      published as an open-source demo app.
+    tags: [react-native, mobile, side-project]
+
+skills:
+  - id: languages
+    label: "Languages & Frameworks:"
+    items: "TypeScript, JavaScript, Node.js, NestJS, React, Python."
+  - id: infrastructure
+    label: "Infrastructure & Platform:"
+    items: "PostgreSQL, REST APIs, Docker, GitHub Actions, AWS basics (S3, ECS)."
+  - id: practices
+    label: "Practices:"
+    items: "Code review, automated testing, agile delivery, technical writing."
+
+education:
+  institution: State University (fictional)
+  entries:
+    - degree: B.Sc. in Computer Science
+      period: 2015 – 2019
+      details:
+        - "Coursework: algorithms, databases, software engineering, distributed systems."
+        - "Capstone: small-team web app with a Node backend and React client."

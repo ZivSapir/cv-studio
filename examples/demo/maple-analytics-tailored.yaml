@@ -1,0 +1,38 @@
+id: maple-analytics-backend
+label: Demo — Maple Analytics Backend
+extends: master
+notes: >
+  Fictional tailored version for screen recordings. Pair with examples/demo/alex-chen-master.yaml
+  and maple-analytics-backend-jd.txt. Not based on a real company or candidate.
+
+headline: Senior Backend Engineer - TypeScript & Platform APIs
+
+summary: >
+  Backend-leaning software engineer with five years of experience building NestJS services,
+  PostgreSQL-backed APIs, and CI/CD tooling in B2B product teams. At Meridian Software, owned
+  billing and reporting endpoints, split a monolith into deployable modules, and improved release
+  safety with automated tests and Docker-based pipelines.
+
+hiddenBulletIds:
+  - meridian-frontend
+  - harbor-intern
+
+experienceBulletOrder:
+  meridian:
+    - meridian-api
+    - meridian-microservices
+    - meridian-tooling
+    - meridian-quality
+    - meridian-delivery
+  harbor: []
+
+projectOrder:
+  - taskflow-api
+  - budget-buddy
+
+skillCategoryOrder:
+  - languages
+  - infrastructure
+  - practices
+
+projectsSectionTitle: Selected Projects

@@ -60,11 +60,12 @@ export const CvBackupControls = ({
         {showResetToExamples ? (
           <button
             type="button"
-            className="app-button app-button-secondary"
+            className="app-button app-button-danger"
             disabled={disabled}
+            title="Permanently deletes all browser CV data. Export a backup first."
             onClick={() => void onResetToExamples()}
           >
-            Reset to examples
+            Reset to examples…
           </button>
         ) : null}
       </div>
