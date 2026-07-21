@@ -2,9 +2,11 @@
 
 Local-first CV editor: one YAML source of truth, base profiles, job-tailored versions, A4 preview, Edit mode, compare, and PDF export.
 
-**Privacy:** your CV data stays on your machine (or in your browser). This project does not host accounts, sync to a cloud DB, or collect resumes.
+**Live app:** [zivsapir.github.io/cv-studio](https://zivsapir.github.io/cv-studio/)
 
-**License:** [MIT](LICENSE)
+**Privacy:** your CV data stays on your machine (or in your browser). No accounts, no cloud DB, no resume collection. See the in-app footer for full details.
+
+**License:** [MIT](LICENSE) — © Ziv Sapir
 
 ## Two ways to use it
 
@@ -60,7 +62,7 @@ Optional later: paste a free Gemini API key (BYOK) — not in Phase 1.
 
 ## Disclaimer
 
-Provided as-is, without warranty. You are responsible for the accuracy of your CV and for complying with employers' and AI vendors' terms. Not affiliated with Cursor, OpenAI, Google, or any employer named in your files.
+CV Studio is provided **as-is**, without warranty (MIT License). You are responsible for the accuracy of your CV and for third-party AI tools you use. AI prompts are copied by you into ChatGPT/Gemini under their terms — this app does not call those APIs. Not affiliated with OpenAI, Google, Cursor, or any employer named in your files.
 
 ## Tailoring rules (for Cursor, local mode)
 

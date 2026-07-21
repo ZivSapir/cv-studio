@@ -3,6 +3,7 @@ import { load as parseYaml } from 'js-yaml';
 import { CvAiTailorPanel } from './components/CvAiTailorPanel';
 import { CvGetStartedPanel } from './components/CvGetStartedPanel';
 import { CvOnboardingWizard } from './components/CvOnboardingWizard';
+import { CvSiteFooter } from './components/CvSiteFooter';
 import { CvCompareView } from './components/CvCompareView';
 import { CvDocument } from './components/CvDocument';
 import { useCvLibrary } from './hooks/useCvLibrary';
@@ -1116,6 +1117,8 @@ export const App = () => {
           diffs={diffs}
         />
       )}
+
+      <CvSiteFooter isBrowserBackend={isBrowserBackend} />
     </main>
   );
 };
