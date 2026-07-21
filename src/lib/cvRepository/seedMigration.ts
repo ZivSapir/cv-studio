@@ -36,8 +36,8 @@ export function shouldMigrateExampleSeed(workspace: BrowserWorkspace): boolean {
     return false;
   }
 
-  return isExamplePlaceholderMaster(workspace.master)
-    || hasLegacyExampleBases(workspace.bases);
+  // Only reset untouched example seed — not imported real CVs that happen to reuse base ids.
+  return isExamplePlaceholderMaster(workspace.master);
 }
 
 export function createExampleWorkspace(): BrowserWorkspace {

@@ -14,6 +14,7 @@ import {
 import { readWorkspace, writeWorkspace } from './browserStore';
 import {
   createExampleWorkspace,
+  CURRENT_SEED_VERSION,
   shouldMigrateExampleSeed,
 } from './seedMigration';
 import type { CvBackup, CvRepository } from './types';
@@ -258,6 +259,7 @@ export function createBrowserRepository(): CvRepository {
       }
 
       await writeWorkspace({
+        seedVersion: CURRENT_SEED_VERSION,
         master: backup.master,
         bases: backup.bases.map((version) => ({
           ...version,
