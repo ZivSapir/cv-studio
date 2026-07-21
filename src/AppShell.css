@@ -218,6 +218,18 @@ body {
   background: #f8fafc;
 }
 
+.app-ai-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.app-ai-panel-header .app-ai-panel-title {
+  margin: 0;
+}
+
 .app-ai-panel-title {
   margin: 0 0 6px;
   font-size: 15px;

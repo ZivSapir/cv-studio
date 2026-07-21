@@ -1,11 +1,13 @@
 type CvGetStartedPanelProps = {
   onStartWizard: () => void;
+  onImportFromAi: () => void;
   onImportMaster: () => void;
   onImportBackup: () => void;
 };
 
 export const CvGetStartedPanel = ({
   onStartWizard,
+  onImportFromAi,
   onImportMaster,
   onImportBackup,
 }: CvGetStartedPanelProps) => {
@@ -22,6 +24,13 @@ export const CvGetStartedPanel = ({
           onClick={onStartWizard}
         >
           Start guided setup
+        </button>
+        <button
+          type="button"
+          className="app-button app-button-secondary"
+          onClick={onImportFromAi}
+        >
+          Paste CV + AI
         </button>
         <button
           type="button"

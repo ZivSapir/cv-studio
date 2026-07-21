@@ -9,6 +9,11 @@ import { CvDocument } from './components/CvDocument';
 import { useCvLibrary } from './hooks/useCvLibrary';
 import { useEditHistory } from './hooks/useEditHistory';
 import { CvBackupControls } from './components/CvBackupControls';
+import { CvMasterImportPanel } from './components/CvMasterImportPanel';
+import {
+  buildMasterImportPrompt,
+  parseAiMasterYaml,
+} from './lib/buildMasterImportPrompt';
 import {
   buildTailorPrompt,
   parseAiTailorYaml,
@@ -86,8 +91,11 @@ export const App = () => {
   const [mode, setMode] = useState<AppMode>('preview');
   const [isEditing, setIsEditing] = useState(false);
   const [showAiPanel, setShowAiPanel] = useState(false);
+  const [showMasterImportPanel, setShowMasterImportPanel] = useState(false);
   const [jobDescription, setJobDescription] = useState('');
   const [aiReply, setAiReply] = useState('');
+  const [cvImportText, setCvImportText] = useState('');
+  const [masterAiReply, setMasterAiReply] = useState('');
   const {
     draftVersion,
     canUndo,
@@ -617,6 +625,60 @@ export const App = () => {
     setActionMessage('Your CV is ready. Export a backup so you do not lose it.');
   };
 
+  const handleCopyMasterImportPrompt = async () => {
+    if (!cvImportText.trim()) {
+      return;
+    }
+
+    setActionError(null);
+
+    try {
+      const prompt = buildMasterImportPrompt(cvImportText);
+      await navigator.clipboard.writeText(prompt);
+      setActionMessage('Prompt copied. Paste it into ChatGPT or Gemini, then paste the master YAML reply below.');
+    } catch (copyError) {
+      const message = copyError instanceof Error
+        ? copyError.message
+        : 'Failed to copy prompt.';
+      setActionError(message);
+    }
+  };
+
+  const handleApplyMasterImportReply = async () => {
+    if (!masterAiReply.trim()) {
+      return;
+    }
+
+    setActionError(null);
+
+    try {
+      const nextMaster = parseAiMasterYaml(masterAiReply);
+      await importMaster(nextMaster);
+
+      const mainBase = library?.bases.find((base) => base.id === 'main-cv')
+        ?? library?.bases[0];
+
+      if (mainBase) {
+        await updateVersion({
+          ...mainBase,
+          headline: nextMaster.headline,
+          summary: nextMaster.summary,
+        });
+        setSelectedVersionId(mainBase.id);
+      }
+
+      setShowMasterImportPanel(false);
+      setCvImportText('');
+      setMasterAiReply('');
+      setActionMessage('Master CV imported. Export a backup so you do not lose it.');
+    } catch (applyError) {
+      const message = applyError instanceof Error
+        ? applyError.message
+        : 'Failed to apply master YAML.';
+      setActionError(message);
+    }
+  };
+
   const handleCopyAiPrompt = async () => {
     if (!master || !jobDescription.trim()) {
       return;
@@ -977,8 +1039,21 @@ export const App = () => {
       {needsOnboarding && !showOnboarding && !isEditing ? (
         <CvGetStartedPanel
           onStartWizard={() => setShowOnboarding(true)}
+          onImportFromAi={() => setShowMasterImportPanel(true)}
           onImportMaster={() => masterImportInputRef.current?.click()}
           onImportBackup={() => backupImportInputRef.current?.click()}
+        />
+      ) : null}
+
+      {showMasterImportPanel && !isExampleMode && !isEditing ? (
+        <CvMasterImportPanel
+          cvText={cvImportText}
+          aiReply={masterAiReply}
+          onCvTextChange={setCvImportText}
+          onAiReplyChange={setMasterAiReply}
+          onCopyPrompt={handleCopyMasterImportPrompt}
+          onApplyReply={handleApplyMasterImportReply}
+          onClose={() => setShowMasterImportPanel(false)}
         />
       ) : null}
 
