@@ -8,39 +8,37 @@ alwaysApply: false
 
 ## Source of truth
 - `data/master.example.yaml` is the committed template with placeholders (for GitHub / new users).
-- `data/master.yaml` is local personal data (gitignored). Run `npm run setup` to create it from the template.
-- `data/base.yaml` is legacy — use `data/bases/*.yaml` for base profiles (e.g. `main-cv.yaml`, or your own named bases).
-- `data/saved/*.yaml` stores temporary/saved CV variants (local, gitignored). See `data/saved/*.example.yaml` for committed examples.
+- `data/master.yaml` is local CV data (gitignored). Run `npm run setup` to create it from the template.
+- `data/bases/*.yaml` holds base profiles (gitignored). Committed templates live as `data/bases/*.example.yaml`.
+- `data/saved/*.yaml` stores job-specific variants (local, gitignored). See `data/saved/*.example.yaml` for committed examples.
 - Never invent experience, skills, titles, or metrics in master or versions.
-- Wix has two roles under one tenure block. `internalPeriod` is truth for interviews, not shown on the PDF.
+- `internalPeriod` on a role is for interview context only — it is not shown on the PDF.
 - Preview **Edit mode** writes to the active base/saved YAML only — never to `master.yaml` from the UI.
 
 ## Voice & content rules
-- **No em dashes (`—`)** in CV copy (headline, summary, bullets, projects, education). They render as an overly wide "AI" dash in PDF. Use a comma, colon, semicolon, or a regular hyphen `-` instead (e.g. `Engineer - Platform`, not `Engineer — Platform`).
+- **No em dashes (`—`)** in CV copy (headline, summary, bullets, projects, education). They render as an overly wide dash in PDF. Use a comma, colon, semicolon, or a regular hyphen `-` instead (e.g. `Engineer - Platform`, not `Engineer — Platform`).
 - **No YAML line breaks inside hyphenated words.** Folded `>` blocks turn newlines into spaces, so `cross-\nrepository` becomes `cross- repository` on the PDF. Keep hyphenated words on one line (`cross-repository`).
-- **No personal location, age, or gender** in headline, summary, or tailored copy. Do not write "based in Tel Aviv" or similar.
-- Company location on the Wix line (`Wix.com | Tel Aviv, Israel`) is fine — that is the employer, not the candidate.
-- **Past tense for Wix work.** The user previously worked at Wix. Use "At Wix, I built…", "engineered…", "drove…" — not present tense.
-- Present tense is OK only for general self-description that is still true (e.g. "I am passionate about learning") when not tied to Wix employment.
+- Prefer not to put candidate home city, age, or gender in headline or summary unless the user asks for it.
+- Employer location on an experience line (company + city) is fine — that describes the employer, not the candidate.
+- Use past tense for previous roles and present tense only for current roles or general self-description that is still true.
 
 ## Tailoring a version
 1. Create or update `data/saved/<slug>.yaml` with `extends: master`.
 2. Override with: `headline`, `summary`, `hiddenBulletIds`, `hiddenProjectIds`, `bulletOverrides`, `experienceBulletOrder`, `projectOrder`, `skillCategoryOrder`, `projectOverrides`.
-3. **Optional (rare):** `experienceAdditions` + `experienceOrder` for version-only experience (e.g. thesis). `education` override to avoid sidebar duplication.
-4. Emphasize dev work first; keep all three QA/release bullets when space allows.
+3. **Optional (rare):** `experienceAdditions` + `experienceOrder` for version-only experience. `education` override to avoid sidebar duplication.
+4. Lead with the strongest match for the target role; hide lower-priority bullets only when needed for space.
 5. Keep output to one A4 page — shorten wording before hiding factual bullets.
-6. Confirm with the user before dropping in-progress project features they intend to ship (e.g. Google Calendar sync).
+6. Confirm with the user before dropping in-progress project features they intend to keep.
 7. User can use **Save as base…** to create a new base CV or replace an existing one.
 
 ## Preview Edit mode
-- Edit the selected base or saved CV in the preview; **Save edits** persists via `PUT /api/cv/version/:id`.
-- Do not teach the UI to edit `master.yaml`. Shared fact changes belong in master via Cursor/file edit.
+- Edit the selected base or saved CV in the preview; **Save edits** persists via `PUT /api/cv/version/:id` (local mode) or IndexedDB (web mode).
+- Do not teach the UI to edit `master.yaml`. Shared fact changes belong in master via file edit, import, or onboarding.
 - After polishing a tailored CV, promote with **Save as base…** if that profile should become the new default for that track.
 
 ## When user sends a job description
 - Match keywords to bullet/project `tags` in master.yaml.
-- Create a saved version file under `data/saved/`.
-- Rewrite headline + summary to align with the role; do not claim years of dev beyond the developer `internalPeriod`.
-- Frame QA/release as a strength (quality, releases, production), not as the primary identity for dev roles.
+- Create a saved version file under `data/saved/` (or use Tailor with AI in the web UI).
+- Rewrite headline + summary to align with the role; do not invent years of experience or skills not present in master.
 - Summarize changes for the user: what moved up, what was hidden, what was rewritten.
 - Tell the user to click **Reload** in cv-studio after file edits (or use Edit mode on that saved version).
