@@ -57,8 +57,7 @@ type CvVersionFile = {
 const DATA_DIR = path.resolve(process.cwd(), 'data');
 const BASES_DIR = path.join(DATA_DIR, 'bases');
 const SAVED_DIR = path.join(DATA_DIR, 'saved');
-const BASE_PROFILE_ORDER = ['frontend-cv', 'data-engineer-cv', 'fullstack-cv'];
-const COMPARE_BASE_ID = 'frontend-cv';
+const DEFAULT_COMPARE_BASE_ID = 'main-cv';
 const LEGACY_BASE_PATH = path.join(DATA_DIR, 'base.yaml');
 
 type DataSource = 'local' | 'example';
@@ -74,20 +73,27 @@ function slugify(label: string): string {
     .replace(/^-|-$/g, '') || 'cv';
 }
 
+function createUniqueBaseId(label: string, existingIds: string[]): string {
+  const base = slugify(label);
+  if (!existingIds.includes(base)) {
+    return base;
+  }
+
+  let suffix = 2;
+  while (existingIds.includes(`${base}-${suffix}`)) {
+    suffix += 1;
+  }
+
+  return `${base}-${suffix}`;
+}
+
+function resolveCompareBaseId(versions: CvVersionFile[]): string {
+  const preferred = versions.find((entry) => entry.id === DEFAULT_COMPARE_BASE_ID);
+  return preferred?.id ?? versions[0]?.id ?? DEFAULT_COMPARE_BASE_ID;
+}
+
 function sortBaseProfiles(versions: CvVersionFile[]): CvVersionFile[] {
-  const orderIndex = (id: string) => {
-    const index = BASE_PROFILE_ORDER.indexOf(id);
-    return index === -1 ? BASE_PROFILE_ORDER.length : index;
-  };
-
-  return [...versions].sort((left, right) => {
-    const orderDiff = orderIndex(left.id) - orderIndex(right.id);
-    if (orderDiff !== 0) {
-      return orderDiff;
-    }
-
-    return left.label.localeCompare(right.label);
-  });
+  return [...versions].sort((left, right) => left.label.localeCompare(right.label));
 }
 
 async function readBody(req: IncomingMessage): Promise<string> {
@@ -151,8 +157,8 @@ async function listBaseVersions(source: DataSource): Promise<CvVersionFile[]> {
       const legacyBase = await readYamlFile<CvVersionFile>(LEGACY_BASE_PATH);
       versions.push({
         ...legacyBase,
-        id: legacyBase.id === 'base' ? COMPARE_BASE_ID : legacyBase.id,
-        label: legacyBase.label === 'Base CV' ? 'Frontend CV' : legacyBase.label,
+        id: legacyBase.id === 'base' ? DEFAULT_COMPARE_BASE_ID : legacyBase.id,
+        label: legacyBase.label === 'Base CV' ? 'Main CV' : legacyBase.label,
       });
     } catch {
       // no legacy base.yaml
@@ -234,10 +240,6 @@ function stripVersionMeta(version: CvVersionFile): Omit<CvVersionFile, 'id' | 'l
   };
 }
 
-function isBaseProfileId(id: string): boolean {
-  return BASE_PROFILE_ORDER.includes(id);
-}
-
 async function resolveLocalVersionPath(
   id: string,
 ): Promise<{ filePath: string; kind: 'base' | 'saved' } | null> {
@@ -305,11 +307,54 @@ export function cvApiPlugin(): Plugin {
                 ...version,
                 kind: 'base',
               })),
-              compareBaseId: COMPARE_BASE_ID,
+              compareBaseId: resolveCompareBaseId(bases),
               saved: saved.map((version) => ({
                 ...version,
                 kind: 'saved',
               })),
+            });
+            return;
+          }
+
+          if (req.method === 'GET' && pathname === '/api/cv/master') {
+            const masterPath = path.join(DATA_DIR, 'master.yaml');
+            try {
+              const master = await readYamlFile<unknown>(masterPath);
+              sendJson(res, 200, master);
+            } catch {
+              sendJson(res, 404, { error: 'master.yaml not found. Run npm run setup.' });
+            }
+            return;
+          }
+
+          if (req.method === 'PUT' && pathname === '/api/cv/master') {
+            const masterPath = path.join(DATA_DIR, 'master.yaml');
+            const body = JSON.parse(await readBody(req));
+            await writeYamlFile(masterPath, body);
+            sendJson(res, 200, { ok: true });
+            return;
+          }
+
+          if (req.method === 'POST' && pathname === '/api/cv/saved/import') {
+            await ensureSavedDir();
+            const body = JSON.parse(await readBody(req)) as CvVersionFile;
+            const id = slugify(body.label || body.id || 'imported');
+            const now = new Date().toISOString();
+            const nextVersion: CvVersionFile = {
+              ...stripVersionMeta({
+                ...body,
+                extends: 'master',
+              }),
+              id,
+              label: body.label || id,
+              createdAt: body.createdAt ?? now,
+              updatedAt: now,
+            };
+            const filePath = await uniqueSavedPath(id);
+            await writeYamlFile(filePath, nextVersion);
+            sendJson(res, 201, {
+              ...nextVersion,
+              kind: 'saved',
             });
             return;
           }
@@ -392,13 +437,13 @@ export function cvApiPlugin(): Plugin {
           if (req.method === 'POST' && pathname === '/api/cv/base') {
             const body = JSON.parse(await readBody(req)) as {
               sourceId: string;
-              targetBaseId: string;
+              mode: 'create' | 'replace';
+              label?: string;
+              targetBaseId?: string;
             };
 
-            if (!body.targetBaseId || !isBaseProfileId(body.targetBaseId)) {
-              sendJson(res, 400, {
-                error: 'targetBaseId must be frontend-cv, data-engineer-cv, or fullstack-cv.',
-              });
+            if (body.mode !== 'create' && body.mode !== 'replace') {
+              sendJson(res, 400, { error: 'mode must be create or replace.' });
               return;
             }
 
@@ -409,22 +454,56 @@ export function cvApiPlugin(): Plugin {
               return;
             }
 
-            const existingTarget = (await listBaseVersions('local')).find(
+            await ensureBasesDir();
+            const existingBases = await listBaseVersions('local');
+
+            if (body.mode === 'create') {
+              const label = body.label?.trim();
+              if (!label) {
+                sendJson(res, 400, { error: 'label is required when mode is create.' });
+                return;
+              }
+
+              const id = createUniqueBaseId(
+                label,
+                existingBases.map((entry) => entry.id),
+              );
+              const nextBase: CvVersionFile = {
+                ...stripVersionMeta(source),
+                id,
+                label,
+                updatedAt: new Date().toISOString(),
+              };
+
+              await writeYamlFile(getBaseFilePath(id), nextBase);
+              sendJson(res, 200, {
+                ...nextBase,
+                kind: 'base',
+              });
+              return;
+            }
+
+            if (!body.targetBaseId) {
+              sendJson(res, 400, { error: 'targetBaseId is required when mode is replace.' });
+              return;
+            }
+
+            const existingTarget = existingBases.find(
               (entry) => entry.id === body.targetBaseId,
             );
-            const defaultLabels: Record<string, string> = {
-              'frontend-cv': 'Frontend CV',
-              'data-engineer-cv': 'Data Engineer / Analyst CV',
-              'fullstack-cv': 'Full-Stack & AI CV',
-            };
+
+            if (!existingTarget) {
+              sendJson(res, 404, { error: 'Target base not found.' });
+              return;
+            }
+
             const nextBase: CvVersionFile = {
               ...stripVersionMeta(source),
               id: body.targetBaseId,
-              label: existingTarget?.label ?? defaultLabels[body.targetBaseId] ?? body.targetBaseId,
+              label: existingTarget.label,
               updatedAt: new Date().toISOString(),
             };
 
-            await ensureBasesDir();
             await writeYamlFile(getBaseFilePath(body.targetBaseId), nextBase);
             sendJson(res, 200, {
               ...nextBase,

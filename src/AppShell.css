@@ -177,6 +177,88 @@ body {
   margin: 0 auto;
 }
 
+.app-toolbar-actions-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.app-file-button {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 14px;
+  border: 1px solid #bcccdc;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #102a43;
+  font: inherit;
+  cursor: pointer;
+}
+
+.app-file-button input {
+  display: none;
+}
+
+.app-file-button:hover {
+  background: #f0f4f8;
+}
+
+.app-file-button-disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.app-ai-panel {
+  max-width: 1200px;
+  margin: 0 auto 16px;
+  padding: 14px 16px;
+  border: 1px solid #d9e2ec;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.app-ai-panel-title {
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #243b53;
+}
+
+.app-ai-panel-copy {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: #486581;
+  line-height: 1.4;
+}
+
+.app-ai-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #52606d;
+}
+
+.app-ai-field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid #bcccdc;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+  color: #102a43;
+  resize: vertical;
+}
+
 .app-preview {
   display: flex;
   justify-content: center;
@@ -233,6 +315,138 @@ body {
   font-size: 12px;
 }
 
+.app-get-started,
+.app-onboarding {
+  max-width: 1200px;
+  margin: 0 auto 20px;
+  padding: 20px;
+  border: 1px solid #bcccdc;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.app-get-started-title,
+.app-onboarding-title {
+  margin: 0 0 8px;
+  font-size: 20px;
+  font-weight: 600;
+  color: #102a43;
+}
+
+.app-get-started-copy,
+.app-onboarding-steps,
+.app-onboarding-review-intro {
+  margin: 0 0 16px;
+  color: #486581;
+  font-size: 14px;
+}
+
+.app-get-started-actions,
+.app-onboarding-actions,
+.app-onboarding-inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.app-onboarding-header {
+  margin-bottom: 16px;
+}
+
+.app-onboarding-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.app-onboarding-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: #334e68;
+}
+
+.app-onboarding-field-wide {
+  grid-column: 1 / -1;
+}
+
+.app-onboarding-field input,
+.app-onboarding-field textarea {
+  padding: 10px 12px;
+  border: 1px solid #bcccdc;
+  border-radius: 8px;
+  font: inherit;
+}
+
+.app-onboarding-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.app-onboarding-card,
+.app-onboarding-subcard {
+  padding: 16px;
+  border: 1px solid #d9e2ec;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.app-onboarding-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.app-onboarding-card-title,
+.app-onboarding-subcard-title,
+.app-onboarding-section-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #243b53;
+}
+
+.app-onboarding-section-title {
+  margin-top: 4px;
+}
+
+.app-onboarding-review-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.app-onboarding-review-list div {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 12px;
+}
+
+.app-onboarding-review-list dt {
+  margin: 0;
+  font-weight: 600;
+  color: #52606d;
+}
+
+.app-onboarding-review-list dd {
+  margin: 0;
+  color: #102a43;
+}
+
+@media (max-width: 720px) {
+  .app-onboarding-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .app-onboarding-review-list div {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media print {
   .app-hidden-panel {
     display: none !important;
@@ -261,7 +475,11 @@ body {
   .app-warning,
   .app-message,
   .app-error-banner,
-  .app-info-banner {
+  .app-info-banner,
+  .app-ai-panel,
+  .app-hidden-panel,
+  .app-get-started,
+  .app-onboarding {
     display: none !important;
   }
 

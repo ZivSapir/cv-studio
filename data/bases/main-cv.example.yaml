@@ -1,0 +1,28 @@
+id: main-cv
+label: Main CV
+extends: master
+kind: base
+
+headline: Your Professional Title (e.g. Software Engineer)
+
+summary: >
+  2-4 sentences: who you are, what you build, and what you bring to a team. Lead with your
+  strongest angle for the roles you want. Mention architecture, impact, and tools you use
+  honestly.
+
+experienceBulletOrder:
+  acme:
+    - acme-feature
+    - acme-architecture
+    - acme-tooling
+    - acme-delivery
+    - acme-quality
+
+projectOrder:
+  - project-alpha
+  - project-beta
+
+skillCategoryOrder:
+  - languages
+  - infrastructure
+  - practices

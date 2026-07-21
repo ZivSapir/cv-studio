@@ -2,65 +2,66 @@
 
 Local-first CV editor: one YAML source of truth, base profiles, job-tailored versions, A4 preview, Edit mode, compare, and PDF export.
 
-**Privacy:** your CV data stays on your machine. This project does not host accounts, sync to a cloud, or collect resumes.
+**Privacy:** your CV data stays on your machine (or in your browser). This project does not host accounts, sync to a cloud DB, or collect resumes.
 
 **License:** [MIT](LICENSE)
 
-## Who it's for
+## Two ways to use it
 
-Developers (and Cursor / VS Code users) who want a structured CV workflow without a SaaS resume builder.
+### 1) Web (GitHub Pages) — no install
 
-## Quick start
+Open the hosted site (after Pages is enabled): `https://zivsapir.github.io/cv-studio/`
+
+- Data is stored in **your browser** (IndexedDB)
+- Use **Export backup** regularly
+- **Tailor with AI**: copy a prompt into your ChatGPT/Gemini, paste the YAML reply back
+- Nothing is uploaded to our servers
+
+### 2) Local developer mode
 
 ```bash
 git clone https://github.com/ZivSapir/cv-studio.git
 cd cv-studio
 npm install
-npm run setup    # copies example YAML → local data files (skips files that already exist)
+npm run setup
 npm run dev
 ```
 
 Open http://localhost:5173/
 
-Save / edit / set-as-base / delete write YAML via the local Vite API (`npm run dev` only). Nothing is sent to a remote backend.
+In local mode, Save / Edit / Set-as-base write YAML under `data/` via the Vite API.
 
 ## Bring your own AI
 
 This app does **not** ship API keys or call OpenAI / Gemini / Claude for you.
 
-1. **Cursor (recommended):** open this folder; use [`.cursor/rules/cv-editing.mdc`](.cursor/rules/cv-editing.mdc); paste a job description in chat and ask for a `data/saved/<slug>.yaml`.
-2. **Any chat LLM:** paste your `master.yaml` + the JD; ask for a saved-version YAML snippet; save it under `data/saved/`.
-3. **No AI:** use **Edit** mode in the preview, or edit YAML by hand.
+1. Click **Tailor with AI**, paste a job description, **Copy prompt**
+2. Paste into ChatGPT or Gemini in your browser
+3. Paste the YAML reply back and **Apply as saved CV**
+
+Optional later: paste a free Gemini API key (BYOK) — not in Phase 1.
 
 ## Repository layout
 
 | File | In git? | Purpose |
 |---|---|---|
 | `data/master.example.yaml` | yes | Placeholder master CV |
-| `data/bases/*.example.yaml` | yes | Frontend / Data / Full-Stack base templates |
-| `data/saved/*.example.yaml` | yes | Example tailored version |
-| `data/master.yaml` | **no** (local) | Your personal CV facts |
-| `data/bases/*.yaml` | **no** (local) | Your three base profiles |
+| `data/bases/main-cv.example.yaml` | yes | Default general base template |
+| `data/saved/*.example.yaml` | yes | Optional example tailored version |
+| `data/master.yaml` | **no** (local) | Your personal CV facts (local mode) |
+| `data/bases/*.yaml` | **no** (local) | Your base profiles (any number) |
 | `data/saved/*.yaml` | **no** (local) | Your job-specific CVs |
 
-## Workflow
+## Workflow (local)
 
-1. Run `npm run setup`, then replace placeholders in `data/master.yaml` with your real content.
-2. Pick a **Base CV** or saved version in the app.
-3. **Reload** after file edits, or use **Edit** to tweak the active version in the preview.
-4. **Compare** against the Frontend base, then **Download PDF**.
-
-### Edit mode
-
-- Edits save to the selected base/saved YAML only (not `master.yaml`).
-- Use **Save as base…** to promote a version onto Frontend / Data / Full-Stack.
-- Exit Edit before downloading PDF.
-- Back up your local `data/` yourself if you need a content revert point (git ignores it).
+1. Run `npm run setup`, then edit `data/master.yaml`
+2. Pick a Base CV or saved version
+3. Reload / Edit / Compare / Download PDF
 
 ## Disclaimer
 
-Provided as-is, without warranty. You are responsible for the accuracy of your CV and for complying with employers' and AI vendors' terms. Not affiliated with Cursor, Wix, or any employer named in your local files.
+Provided as-is, without warranty. You are responsible for the accuracy of your CV and for complying with employers' and AI vendors' terms. Not affiliated with Cursor, OpenAI, Google, or any employer named in your files.
 
-## Tailoring rules (for Cursor)
+## Tailoring rules (for Cursor, local mode)
 
 See [`.cursor/rules/cv-editing.mdc`](.cursor/rules/cv-editing.mdc).

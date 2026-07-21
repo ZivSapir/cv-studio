@@ -9,7 +9,7 @@ alwaysApply: false
 ## Source of truth
 - `data/master.example.yaml` is the committed template with placeholders (for GitHub / new users).
 - `data/master.yaml` is local personal data (gitignored). Run `npm run setup` to create it from the template.
-- `data/base.yaml` is legacy — use `data/bases/frontend-cv.yaml`, `data/bases/data-engineer-cv.yaml`, and `data/bases/fullstack-cv.yaml` instead.
+- `data/base.yaml` is legacy — use `data/bases/*.yaml` for base profiles (e.g. `main-cv.yaml`, or your own named bases).
 - `data/saved/*.yaml` stores temporary/saved CV variants (local, gitignored). See `data/saved/*.example.yaml` for committed examples.
 - Never invent experience, skills, titles, or metrics in master or versions.
 - Wix has two roles under one tenure block. `internalPeriod` is truth for interviews, not shown on the PDF.
@@ -30,7 +30,7 @@ alwaysApply: false
 4. Emphasize dev work first; keep all three QA/release bullets when space allows.
 5. Keep output to one A4 page — shorten wording before hiding factual bullets.
 6. Confirm with the user before dropping in-progress project features they intend to ship (e.g. Google Calendar sync).
-7. User can use **Save as base…** to promote a version onto a chosen base (`frontend-cv`, `data-engineer-cv`, or `fullstack-cv`).
+7. User can use **Save as base…** to create a new base CV or replace an existing one.
 
 ## Preview Edit mode
 - Edit the selected base or saved CV in the preview; **Save edits** persists via `PUT /api/cv/version/:id`.

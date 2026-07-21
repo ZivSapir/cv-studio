@@ -97,16 +97,15 @@ export type CvVersion = {
   education?: CvEducation;
 };
 
-export type CvBaseProfileId =
-  | 'frontend-cv'
-  | 'data-engineer-cv'
-  | 'fullstack-cv';
-
-export const CV_BASE_PROFILE_IDS: CvBaseProfileId[] = [
-  'frontend-cv',
-  'data-engineer-cv',
-  'fullstack-cv',
-];
+export type PromoteToBaseTarget =
+  | {
+      mode: 'create';
+      label: string;
+    }
+  | {
+      mode: 'replace';
+      targetBaseId: string;
+    };
 
 export type CvLibrary = {
   bases: CvVersion[];

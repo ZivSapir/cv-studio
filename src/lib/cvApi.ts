@@ -1,8 +1,8 @@
 import type { CvDataSource } from './loadCvData';
 import type {
-  CvBaseProfileId,
   CvLibrary,
   CvVersion,
+  PromoteToBaseTarget,
 } from '../types/cv';
 
 async function parseJsonResponse<T>(response: Response): Promise<T> {
@@ -58,7 +58,7 @@ export async function updateCvVersion(
 
 export async function promoteCvToBase(
   sourceId: string,
-  targetBaseId: CvBaseProfileId,
+  target: PromoteToBaseTarget,
 ): Promise<CvVersion> {
   const response = await fetch('/api/cv/base', {
     method: 'POST',
@@ -67,7 +67,7 @@ export async function promoteCvToBase(
     },
     body: JSON.stringify({
       sourceId,
-      targetBaseId,
+      ...target,
     }),
   });
 

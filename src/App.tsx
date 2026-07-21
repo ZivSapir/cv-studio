@@ -1,9 +1,22 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { load as parseYaml } from 'js-yaml';
+import { CvAiTailorPanel } from './components/CvAiTailorPanel';
+import { CvGetStartedPanel } from './components/CvGetStartedPanel';
+import { CvOnboardingWizard } from './components/CvOnboardingWizard';
 import { CvCompareView } from './components/CvCompareView';
 import { CvDocument } from './components/CvDocument';
 import { useCvLibrary } from './hooks/useCvLibrary';
 import { useEditHistory } from './hooks/useEditHistory';
+import { CvBackupControls } from './components/CvBackupControls';
+import {
+  buildTailorPrompt,
+  parseAiTailorYaml,
+} from './lib/buildTailorPrompt';
+import { buildMasterFromOnboardingDraft } from './lib/onboarding/buildMasterFromDraft';
+import type { OnboardingDraft } from './lib/onboarding/types';
+import { isPlaceholderMaster } from './lib/isPlaceholderMaster';
 import { compareResolvedCvs } from './lib/compareCv';
+import type { CvBackup } from './lib/cvRepository';
 import {
   listHiddenBullets,
   listHiddenProjects,
@@ -18,30 +31,23 @@ import {
   toggleHiddenProject,
   versionPayloadForSave,
 } from './lib/editCvVersion';
-import { loadMasterCv, type CvDataSource } from './lib/loadCvData';
+import type { CvDataSource } from './lib/loadCvData';
 import { mergeCvVersion } from './lib/mergeCvVersion';
 import {
   buildCvPdfTitle,
   cvPageOverflows,
 } from './lib/printCv';
 import type {
-  CvBaseProfileId,
   CvLibrary,
+  CvMaster,
   CvVersion,
   ResolvedCv,
 } from './types/cv';
-import { CV_BASE_PROFILE_IDS } from './types/cv';
 import './AppShell.css';
 
 type AppMode = 'preview' | 'compare';
 
-const DEFAULT_VERSION_ID = 'frontend-cv';
-
-const BASE_PROFILE_LABELS: Record<CvBaseProfileId, string> = {
-  'frontend-cv': 'Frontend CV',
-  'data-engineer-cv': 'Data Engineer / Analyst CV',
-  'fullstack-cv': 'Full-Stack & AI CV',
-};
+const DEFAULT_VERSION_ID = 'main-cv';
 
 function getAllVersions(library: CvLibrary): CvVersion[] {
   return [...library.bases, ...library.saved];
@@ -58,7 +64,9 @@ export const App = () => {
   const pageRef = useRef<HTMLElement>(null);
   const [dataSource, setDataSource] = useState<CvDataSource>('local');
   const {
+    backendKind,
     library,
+    master,
     isLoading,
     error,
     reloadLibrary,
@@ -66,16 +74,19 @@ export const App = () => {
     updateVersion,
     setAsBase,
     removeSaved,
+    exportBackup,
+    importBackup,
+    importMaster,
+    importSavedVersion,
+    resetToExamples,
   } = useCvLibrary(dataSource);
-
-  const master = useMemo(
-    () => loadMasterCv(dataSource),
-    [dataSource],
-  );
 
   const [selectedVersionId, setSelectedVersionId] = useState(DEFAULT_VERSION_ID);
   const [mode, setMode] = useState<AppMode>('preview');
   const [isEditing, setIsEditing] = useState(false);
+  const [showAiPanel, setShowAiPanel] = useState(false);
+  const [jobDescription, setJobDescription] = useState('');
+  const [aiReply, setAiReply] = useState('');
   const {
     draftVersion,
     canUndo,
@@ -92,8 +103,14 @@ export const App = () => {
   const [overflowsPage, setOverflowsPage] = useState(false);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const masterImportInputRef = useRef<HTMLInputElement>(null);
+  const backupImportInputRef = useRef<HTMLInputElement>(null);
 
   const isExampleMode = dataSource === 'example';
+  const isBrowserBackend = backendKind === 'browser';
+  const canMutateData = !isExampleMode && !isEditing;
+  const needsOnboarding = !isExampleMode && Boolean(master && isPlaceholderMaster(master));
 
   useEffect(() => {
     setSelectedVersionId(DEFAULT_VERSION_ID);
@@ -133,7 +150,7 @@ export const App = () => {
     : selectedVersion;
 
   const resolvedCv = useMemo((): ResolvedCv | null => {
-    if (!activeVersion) {
+    if (!activeVersion || !master) {
       return null;
     }
 
@@ -149,7 +166,7 @@ export const App = () => {
   }, [library]);
 
   const baseResolvedCv = useMemo((): ResolvedCv | null => {
-    if (!compareBase) {
+    if (!compareBase || !master) {
       return null;
     }
 
@@ -169,7 +186,7 @@ export const App = () => {
   }, [baseResolvedCv, resolvedCv, selectedVersion, compareBase]);
 
   const hiddenBullets = useMemo(() => {
-    if (!isEditing || !draftVersion) {
+    if (!isEditing || !draftVersion || !master) {
       return [];
     }
 
@@ -177,7 +194,7 @@ export const App = () => {
   }, [draftVersion, isEditing, master]);
 
   const hiddenProjects = useMemo(() => {
-    if (!isEditing || !draftVersion) {
+    if (!isEditing || !draftVersion || !master) {
       return [];
     }
 
@@ -361,44 +378,94 @@ export const App = () => {
   };
 
   const handleSetAsBase = async () => {
-    if (!selectedVersion || isEditing) {
+    if (!selectedVersion || !library || isEditing) {
       return;
     }
 
-    const options = CV_BASE_PROFILE_IDS
-      .map((id, index) => `${index + 1}) ${BASE_PROFILE_LABELS[id]}`)
-      .join('\n');
-    const answer = window.prompt(
-      `Replace which base with "${selectedVersion.label}"?\n\n${options}\n\nEnter 1, 2, or 3:`,
+    const modeAnswer = window.prompt(
+      `Save "${selectedVersion.label}" as a base CV:\n\n1) Create new base\n2) Replace existing base\n\nEnter 1 or 2:`,
       '1',
     );
 
-    if (!answer?.trim()) {
+    if (!modeAnswer?.trim()) {
       return;
     }
 
-    const choice = Number.parseInt(answer.trim(), 10);
-    const targetBaseId = CV_BASE_PROFILE_IDS[choice - 1];
-
-    if (!targetBaseId) {
-      setActionError('Enter 1, 2, or 3 to choose a base profile.');
-      return;
-    }
-
-    const confirmed = window.confirm(
-      `Replace "${BASE_PROFILE_LABELS[targetBaseId]}" with "${selectedVersion.label}"?`,
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
+    const modeChoice = Number.parseInt(modeAnswer.trim(), 10);
     setActionError(null);
 
     try {
-      const baseVersion = await setAsBase(selectedVersion.id, targetBaseId);
+      if (modeChoice === 1) {
+        const label = window.prompt(
+          'Name for the new base CV:',
+          selectedVersion.label,
+        )?.trim();
+
+        if (!label) {
+          return;
+        }
+
+        const confirmed = window.confirm(
+          `Create new base "${label}" from "${selectedVersion.label}"?`,
+        );
+
+        if (!confirmed) {
+          return;
+        }
+
+        const baseVersion = await setAsBase(selectedVersion.id, {
+          mode: 'create',
+          label,
+        });
+        setSelectedVersionId(baseVersion.id);
+        setActionMessage(`Created base: ${label}.`);
+        return;
+      }
+
+      if (modeChoice !== 2) {
+        setActionError('Enter 1 to create a new base or 2 to replace an existing one.');
+        return;
+      }
+
+      if (library.bases.length === 0) {
+        setActionError('No existing bases to replace. Choose create new base instead.');
+        return;
+      }
+
+      const options = library.bases
+        .map((base, index) => `${index + 1}) ${base.label}`)
+        .join('\n');
+      const replaceAnswer = window.prompt(
+        `Replace which base with "${selectedVersion.label}"?\n\n${options}\n\nEnter a number:`,
+        '1',
+      );
+
+      if (!replaceAnswer?.trim()) {
+        return;
+      }
+
+      const replaceChoice = Number.parseInt(replaceAnswer.trim(), 10);
+      const targetBase = library.bases[replaceChoice - 1];
+
+      if (!targetBase) {
+        setActionError(`Enter a number between 1 and ${library.bases.length}.`);
+        return;
+      }
+
+      const confirmed = window.confirm(
+        `Replace "${targetBase.label}" with "${selectedVersion.label}"?`,
+      );
+
+      if (!confirmed) {
+        return;
+      }
+
+      const baseVersion = await setAsBase(selectedVersion.id, {
+        mode: 'replace',
+        targetBaseId: targetBase.id,
+      });
       setSelectedVersionId(baseVersion.id);
-      setActionMessage(`Updated base: ${BASE_PROFILE_LABELS[targetBaseId]}.`);
+      setActionMessage(`Updated base: ${targetBase.label}.`);
     } catch (promoteError) {
       const message = promoteError instanceof Error
         ? promoteError.message
@@ -434,6 +501,175 @@ export const App = () => {
     }
   };
 
+  const handleExportBackup = async () => {
+    setActionError(null);
+
+    try {
+      const backup = await exportBackup();
+      const blob = new Blob([JSON.stringify(backup, null, 2)], {
+        type: 'application/json',
+      });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = `cv-studio-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+      setActionMessage('Backup downloaded.');
+    } catch (exportError) {
+      const message = exportError instanceof Error
+        ? exportError.message
+        : 'Failed to export backup.';
+      setActionError(message);
+    }
+  };
+
+  const handleImportBackupFile = async (file: File) => {
+    setActionError(null);
+
+    try {
+      const text = await file.text();
+      const backup = JSON.parse(text) as CvBackup;
+      const confirmed = window.confirm(
+        'Replace all local CV data in this browser/workspace with the backup?',
+      );
+
+      if (!confirmed) {
+        return;
+      }
+
+      await importBackup(backup);
+      setSelectedVersionId(DEFAULT_VERSION_ID);
+      setActionMessage('Backup imported.');
+    } catch (importError) {
+      const message = importError instanceof Error
+        ? importError.message
+        : 'Failed to import backup.';
+      setActionError(message);
+    }
+  };
+
+  const handleImportMasterFile = async (file: File) => {
+    setActionError(null);
+
+    try {
+      const text = await file.text();
+      const nextMaster = parseYaml(text) as CvMaster;
+      const confirmed = window.confirm(
+        'Replace your master CV with this YAML file?',
+      );
+
+      if (!confirmed) {
+        return;
+      }
+
+      await importMaster(nextMaster);
+      setActionMessage('Master CV imported.');
+    } catch (importError) {
+      const message = importError instanceof Error
+        ? importError.message
+        : 'Failed to import master YAML.';
+      setActionError(message);
+    }
+  };
+
+  const handleResetToExamples = async () => {
+    setActionError(null);
+
+    const confirmed = window.confirm(
+      'Reset to the default example CV (Main CV only)? This replaces all browser-stored data.',
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await resetToExamples();
+      setSelectedVersionId(DEFAULT_VERSION_ID);
+      setActionMessage('Reset to example data.');
+    } catch (resetError) {
+      const message = resetError instanceof Error
+        ? resetError.message
+        : 'Failed to reset example data.';
+      setActionError(message);
+    }
+  };
+
+  const handleCompleteOnboarding = async (draft: OnboardingDraft) => {
+    const nextMaster = buildMasterFromOnboardingDraft(draft);
+    await importMaster(nextMaster);
+
+    const mainBase = library?.bases.find((base) => base.id === 'main-cv')
+      ?? library?.bases[0];
+
+    if (mainBase) {
+      await updateVersion({
+        ...mainBase,
+        headline: draft.headline,
+        summary: draft.summary,
+      });
+      setSelectedVersionId(mainBase.id);
+    }
+
+    setShowOnboarding(false);
+    setActionMessage('Your CV is ready. Export a backup so you do not lose it.');
+  };
+
+  const handleCopyAiPrompt = async () => {
+    if (!master || !jobDescription.trim()) {
+      return;
+    }
+
+    setActionError(null);
+
+    try {
+      const prompt = buildTailorPrompt(master, jobDescription);
+      await navigator.clipboard.writeText(prompt);
+      setActionMessage('Prompt copied. Paste it into ChatGPT or Gemini, then paste the YAML reply below.');
+    } catch (copyError) {
+      const message = copyError instanceof Error
+        ? copyError.message
+        : 'Failed to copy prompt.';
+      setActionError(message);
+    }
+  };
+
+  const handleApplyAiReply = async () => {
+    if (!aiReply.trim()) {
+      return;
+    }
+
+    setActionError(null);
+
+    try {
+      const parsed = parseAiTailorYaml(aiReply) as CvVersion;
+
+      if (!parsed || typeof parsed !== 'object') {
+        throw new Error('AI reply is not a YAML object.');
+      }
+
+      if (!parsed.label && !parsed.id) {
+        throw new Error('YAML must include at least label or id.');
+      }
+
+      const saved = await importSavedVersion({
+        ...parsed,
+        extends: 'master',
+        label: parsed.label || parsed.id,
+      });
+      setSelectedVersionId(saved.id);
+      setShowAiPanel(false);
+      setAiReply('');
+      setActionMessage(`Created saved CV "${saved.label}".`);
+    } catch (applyError) {
+      const message = applyError instanceof Error
+        ? applyError.message
+        : 'Failed to apply AI YAML.';
+      setActionError(message);
+    }
+  };
+
   if (isLoading) {
     return (
       <main className="app-shell">
@@ -442,7 +678,7 @@ export const App = () => {
     );
   }
 
-  if (error || !library || !selectedVersion || !resolvedCv || !baseResolvedCv) {
+  if (error || !library || !master || !selectedVersion || !resolvedCv || !baseResolvedCv) {
     return (
       <main className="app-shell">
         <p className="app-error">{error ?? 'Failed to load CV library.'}</p>
@@ -553,6 +789,15 @@ export const App = () => {
               </button>
             </div>
           </div>
+
+          <CvBackupControls
+            disabled={!canMutateData}
+            showResetToExamples={isBrowserBackend}
+            onExport={handleExportBackup}
+            onImportBackupFile={handleImportBackupFile}
+            onImportMasterFile={handleImportMasterFile}
+            onResetToExamples={handleResetToExamples}
+          />
         </div>
 
         <div className="app-toolbar-actions">
@@ -628,6 +873,14 @@ export const App = () => {
               ) : null}
               <button
                 type="button"
+                className="app-button app-button-secondary"
+                onClick={() => setShowAiPanel((open) => !open)}
+                disabled={isExampleMode || isEditing}
+              >
+                {showAiPanel ? 'Hide AI tailor' : 'Tailor with AI'}
+              </button>
+              <button
+                type="button"
                 className="app-button"
                 onClick={handleDownloadPdf}
               >
@@ -643,7 +896,16 @@ export const App = () => {
           className="app-info-banner"
           role="status"
         >
-          Viewing the public GitHub template. Your local CV files are unchanged.
+          Viewing the public template. Your My CV data is unchanged.
+        </p>
+      ) : null}
+
+      {isBrowserBackend && !isExampleMode ? (
+        <p
+          className="app-info-banner"
+          role="status"
+        >
+          Web mode: your CV data stays in this browser only. Use Export backup so you do not lose it.
         </p>
       ) : null}
 
@@ -652,7 +914,7 @@ export const App = () => {
           className="app-info-banner"
           role="status"
         >
-          Editing &quot;{selectedVersion.label}&quot; only. Changes write to that YAML on Save,
+          Editing &quot;{selectedVersion.label}&quot; only. Changes write to that version on Save,
           not master. Use Save as base… afterward if you want a base profile updated.
         </p>
       ) : null}
@@ -682,6 +944,59 @@ export const App = () => {
         >
           Content overflows the page. Shorten the summary or bullets, or hide lower-priority items.
         </p>
+      ) : null}
+
+      <input
+        ref={masterImportInputRef}
+        type="file"
+        accept=".yaml,.yml,text/yaml"
+        hidden
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          event.target.value = '';
+          if (file) {
+            void handleImportMasterFile(file);
+          }
+        }}
+      />
+      <input
+        ref={backupImportInputRef}
+        type="file"
+        accept="application/json,.json"
+        hidden
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          event.target.value = '';
+          if (file) {
+            void handleImportBackupFile(file);
+          }
+        }}
+      />
+
+      {needsOnboarding && !showOnboarding && !isEditing ? (
+        <CvGetStartedPanel
+          onStartWizard={() => setShowOnboarding(true)}
+          onImportMaster={() => masterImportInputRef.current?.click()}
+          onImportBackup={() => backupImportInputRef.current?.click()}
+        />
+      ) : null}
+
+      {showOnboarding && !isExampleMode ? (
+        <CvOnboardingWizard
+          onCancel={() => setShowOnboarding(false)}
+          onComplete={handleCompleteOnboarding}
+        />
+      ) : null}
+
+      {showAiPanel && !isExampleMode && !isEditing ? (
+        <CvAiTailorPanel
+          jobDescription={jobDescription}
+          aiReply={aiReply}
+          onJobDescriptionChange={setJobDescription}
+          onAiReplyChange={setAiReply}
+          onCopyPrompt={handleCopyAiPrompt}
+          onApplyReply={handleApplyAiReply}
+        />
       ) : null}
 
       {isEditing && (hiddenBullets.length > 0 || hiddenProjects.length > 0) ? (
