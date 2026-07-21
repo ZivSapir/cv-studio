@@ -84,6 +84,16 @@ export type CvVersion = {
   experienceBulletOrder?: Record<string, string[]>;
   projectOrder?: string[];
   skillCategoryOrder?: string[];
+  skillOverrides?: Record<
+    string,
+    {
+      label?: string;
+      items?: string;
+    }
+  >;
+  roleTitleOverrides?: Record<string, string>;
+  projectsSectionTitle?: string;
+  footerNote?: string;
   education?: CvEducation;
 };
 
@@ -128,4 +138,6 @@ export type ResolvedCv = {
   projects: CvProject[];
   skills: CvSkillCategory[];
   education: CvEducation;
+  projectsSectionTitle: string;
+  footerNote?: string;
 };

@@ -73,6 +73,23 @@ function filterExperience(
   );
 }
 
+function applyRoleTitleOverrides(
+  experience: CvExperience[],
+  roleTitleOverrides: Record<string, string> | undefined,
+): CvExperience[] {
+  if (!roleTitleOverrides || Object.keys(roleTitleOverrides).length === 0) {
+    return experience;
+  }
+
+  return experience.map((entry) => ({
+    ...entry,
+    roles: entry.roles.map((role) => ({
+      ...role,
+      title: roleTitleOverrides[role.title] ?? role.title,
+    })),
+  }));
+}
+
 function buildExperience(
   master: CvMaster,
   version: CvVersion,
@@ -94,9 +111,12 @@ function buildExperience(
     bulletOverrides,
   );
 
-  return orderByIds(
-    [...fromMaster, ...additions],
-    version.experienceOrder,
+  return applyRoleTitleOverrides(
+    orderByIds(
+      [...fromMaster, ...additions],
+      version.experienceOrder,
+    ),
+    version.roleTitleOverrides,
   );
 }
 
@@ -125,7 +145,19 @@ export function mergeCvVersion(
   );
 
   const skills = orderByIds(
-    master.skills,
+    master.skills.map((category) => {
+      const override = version.skillOverrides?.[category.id];
+
+      if (!override) {
+        return category;
+      }
+
+      return {
+        ...category,
+        label: override.label ?? category.label,
+        items: override.items ?? category.items,
+      };
+    }),
     version.skillCategoryOrder,
   );
 
@@ -140,5 +172,7 @@ export function mergeCvVersion(
     projects,
     skills,
     education: version.education ?? master.education,
+    projectsSectionTitle: version.projectsSectionTitle ?? 'Projects',
+    footerNote: version.footerNote,
   };
 }

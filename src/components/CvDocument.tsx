@@ -358,7 +358,7 @@ export const CvDocument = ({
           </section>
 
           <section className="cv-section">
-            <h2 className="cv-section-title">Projects</h2>
+            <h2 className="cv-section-title">{cv.projectsSectionTitle}</h2>
             {cv.projects.map((project, index) => (
               <div
                 key={project.id}
@@ -412,6 +412,10 @@ export const CvDocument = ({
           </section>
         </div>
       </div>
+
+      {cv.footerNote ? (
+        <p className="cv-footer-note">{cv.footerNote}</p>
+      ) : null}
     </article>
   );
 };

@@ -47,6 +47,10 @@ type CvVersionFile = {
   experienceBulletOrder?: Record<string, string[]>;
   projectOrder?: string[];
   skillCategoryOrder?: string[];
+  skillOverrides?: Record<string, { label?: string; items?: string }>;
+  roleTitleOverrides?: Record<string, string>;
+  projectsSectionTitle?: string;
+  footerNote?: string;
   education?: CvEducationFile;
 };
 
@@ -222,6 +226,10 @@ function stripVersionMeta(version: CvVersionFile): Omit<CvVersionFile, 'id' | 'l
     experienceBulletOrder: version.experienceBulletOrder,
     projectOrder: version.projectOrder,
     skillCategoryOrder: version.skillCategoryOrder,
+    skillOverrides: version.skillOverrides,
+    roleTitleOverrides: version.roleTitleOverrides,
+    projectsSectionTitle: version.projectsSectionTitle,
+    footerNote: version.footerNote,
     education: version.education,
   };
 }
