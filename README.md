@@ -17,6 +17,7 @@ Open the hosted site (after Pages is enabled): `https://zivsapir.github.io/cv-st
 - Data is stored in **your browser** (IndexedDB)
 - Use **Export backup** regularly
 - **Tailor with AI**: copy a prompt into your ChatGPT/Gemini, paste the YAML reply back
+- **Cover letter** (saved CVs only): optional BYO-AI letter per application; print to PDF
 - Nothing is uploaded to our servers
 
 ### 2) Local developer mode
@@ -40,6 +41,18 @@ This app does **not** ship API keys or call OpenAI / Gemini / Claude for you.
 1. Click **Tailor with AI**, paste a job description, **Copy prompt**
 2. Paste into ChatGPT or Gemini in your browser
 3. Paste the YAML reply back and **Apply as saved CV**
+
+Prompts instruct the model to **emphasize facts from your master CV only** — not to invent skills or rename job titles. You are responsible for reviewing before you apply.
+
+### Cover letter (optional)
+
+On a **saved** CV, click **Cover letter**:
+
+1. Paste the job description, **Copy prompt** (uses master + this tailored CV)
+2. Paste the plain-text letter back, edit, **Save to this CV**
+3. **Copy letter** or **Print / PDF** when you need to attach it
+
+Optional on master YAML: `applicantBrief` — short voice / extra context included in the cover-letter prompt (not shown on the A4 CV).
 
 Optional later: paste a free Gemini API key (BYOK) — not in Phase 1.
 

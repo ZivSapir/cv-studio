@@ -30,3 +30,12 @@ skillCategoryOrder:
   - languages
   - infrastructure
   - practices
+
+# Optional — only when this application needs a cover letter:
+# coverLetter: |
+#   Dear Acme Team,
+#   ...
+
+# Optional — short note for email / LinkedIn / application form (2–4 sentences):
+# personalNote: >
+#   Hi, I'm applying for...

@@ -21,6 +21,7 @@ import type { CvBackup, CvRepository } from './types';
 import {
   createUniqueBaseId,
   createUniqueSavedId,
+  sortSavedByCreationOrder,
   stripVersionForCopy,
 } from './versionUtils';
 
@@ -84,10 +85,12 @@ export function createBrowserRepository(): CvRepository {
       return {
         bases,
         compareBaseId: resolveCompareBaseId(bases),
-        saved: workspace.saved.map((version) => ({
-          ...version,
-          kind: 'saved' as const,
-        })),
+        saved: sortSavedByCreationOrder(
+          workspace.saved.map((version) => ({
+            ...version,
+            kind: 'saved' as const,
+          })),
+        ),
       };
     },
 
@@ -137,6 +140,14 @@ export function createBrowserRepository(): CvRepository {
         ...version,
         updatedAt: now,
       };
+
+      if (!nextVersion.coverLetter?.trim()) {
+        delete nextVersion.coverLetter;
+      }
+
+      if (!nextVersion.personalNote?.trim()) {
+        delete nextVersion.personalNote;
+      }
 
       const baseIndex = workspace.bases.findIndex((entry) => entry.id === version.id);
       if (baseIndex !== -1) {

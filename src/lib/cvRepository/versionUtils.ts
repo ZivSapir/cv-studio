@@ -60,5 +60,34 @@ export function stripVersionForCopy(
     projectsSectionTitle: version.projectsSectionTitle,
     footerNote: version.footerNote,
     education: version.education,
+    // coverLetter is application-specific — do not copy onto Save copy / promote-to-base
   };
+}
+
+/** Oldest first so newly created saved CVs appear at the bottom of the list. */
+export function sortSavedByCreationOrder(
+  versions: CvVersion[],
+): CvVersion[] {
+  return versions
+    .map((version, index) => ({
+      version,
+      index,
+      createdMs: Date.parse(version.createdAt ?? '')
+        || Date.parse(version.updatedAt ?? '')
+        || null,
+    }))
+    .sort((left, right) => {
+      if (left.createdMs !== null && right.createdMs !== null) {
+        if (left.createdMs !== right.createdMs) {
+          return left.createdMs - right.createdMs;
+        }
+      } else if (left.createdMs !== null) {
+        return 1;
+      } else if (right.createdMs !== null) {
+        return -1;
+      }
+
+      return left.index - right.index;
+    })
+    .map((entry) => entry.version);
 }

@@ -244,6 +244,18 @@ body {
   line-height: 1.4;
 }
 
+.app-cover-letter-badge {
+  font-weight: 500;
+  color: #0c6b58;
+  font-size: 13px;
+}
+
+.app-ai-field-personal-note {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #d9e2ec;
+}
+
 .app-ai-field {
   display: flex;
   flex-direction: column;
@@ -535,6 +547,18 @@ body {
   color: #334e68;
 }
 
+.app-preview-print-source {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 @media print {
   .app-hidden-panel {
     display: none !important;
@@ -584,6 +608,15 @@ body {
 
   .app-preview {
     position: relative;
+  }
+
+  .app-preview-print-source {
+    position: relative;
+    width: 210mm;
+    height: 297mm;
+    margin: 0;
+    clip: auto;
+    overflow: visible;
   }
 
   .cv-page,

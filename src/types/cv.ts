@@ -63,6 +63,8 @@ export type CvMaster = {
   projects: CvProject[];
   skills: CvSkillCategory[];
   education: CvEducation;
+  /** Optional voice / extra context for cover-letter prompts (not shown on the A4 CV). */
+  applicantBrief?: string;
 };
 
 export type CvVersion = {
@@ -95,6 +97,10 @@ export type CvVersion = {
   projectsSectionTitle?: string;
   footerNote?: string;
   education?: CvEducation;
+  /** Optional cover letter for this saved application only (not on the A4 CV). */
+  coverLetter?: string;
+  /** Short personal note for email / LinkedIn / application form (not on the A4 CV). */
+  personalNote?: string;
 };
 
 export type PromoteToBaseTarget =
