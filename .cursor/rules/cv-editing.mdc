@@ -6,30 +6,51 @@ alwaysApply: false
 
 # CV Studio rules
 
-## Source of truth
+## Source of truth (evidence hierarchy)
+
+1. **`data/master.yaml`** — every fact on the PDF (employers, **job titles**, dates, bullets, projects, skills).
+2. **`~/.cursor/ziv-knowledge-base.md`** — depth, thesis metrics, project honesty, **do not oversell** list, Wix story (calendar-first). Use when tailoring; if something is not in master or the knowledge base, do not put it on a CV.
+3. **Job description** — decides **what to emphasize**, not what to invent.
+
+**Tailoring = same person, different spotlight:** reorder and reword; hide lower-priority bullets for space; pick headline/summary angle per role. **Not** new skills, titles, employers, years, or tools because the JD asks for them.
+
 - `data/master.example.yaml` is the committed template with placeholders (for GitHub / new users).
 - `data/master.yaml` is local CV data (gitignored). Run `npm run setup` to create it from the template.
 - `data/bases/*.yaml` holds base profiles (gitignored). Committed templates live as `data/bases/*.example.yaml`.
 - `data/saved/*.yaml` stores job-specific variants (local, gitignored). See `data/saved/*.example.yaml` for committed examples.
 - Never invent experience, skills, titles, or metrics in master or versions.
+- **`roleTitleOverrides` is forbidden** for agents and BYO AI. To fix a title, edit **master** only after Ziv confirms it matches reality (e.g. HR record).
 - `internalPeriod` on a role is for interview context only — it is not shown on the PDF.
 - Preview **Edit mode** writes to the active base/saved YAML only — never to `master.yaml` from the UI.
 
 ## Voice & content rules
 - **No em dashes (`—`)** in CV copy (headline, summary, bullets, projects, education). They render as an overly wide dash in PDF. Use a comma, colon, semicolon, or a regular hyphen `-` instead (e.g. `Engineer - Platform`, not `Engineer — Platform`).
+- **No self-disqualifying copy** in headline, summary, bullet overrides, projects, `coverLetter`, or `personalNote`. Do not invent facts. **Do not tell the employer you fail their requirements** — no volunteering gaps, missing years, "not aligned with…", "I lack X from the JD", "upfront…", or apologies for fit. Present only truthful strengths; **they** judge match from what you show. Private `notes` on a version is for agent context only (e.g. what not to claim).
 - **No YAML line breaks inside hyphenated words.** Folded `>` blocks turn newlines into spaces, so `cross-\nrepository` becomes `cross- repository` on the PDF. Keep hyphenated words on one line (`cross-repository`).
 - Prefer not to put candidate home city, age, or gender in headline or summary unless the user asks for it.
 - Employer location on an experience line (company + city) is fine — that describes the employer, not the candidate.
 - Use past tense for previous roles and present tense only for current roles or general self-description that is still true.
 
+## What tailoring is (and is not)
+
+**Allowed:** `headline`, `summary`, `bulletOverrides` (same underlying facts, clearer emphasis for this JD), `projectOverrides`, `skillOverrides` (reorder or rephrase **only skills already in master** — do not add AWS, Flutter, Priority, etc.), hide/reorder bullets and projects.
+
+**Allowed (rare):** `experienceAdditions` + `experienceOrder` only for entries documented in the knowledge base (e.g. M.Sc. thesis bullets), using verified thesis copy — not new employers.
+
+**Not allowed:** inventing skills, years, employers, metrics, or tools; **`roleTitleOverrides`**; JD keywords that are not backed by master/KB; implying a different job title than master; claiming seniority, platform, or domain experience you do not have; **calling out misalignment** with the posting (missing reqs, wrong seniority, wrong stack) in any applicant-facing text.
+
 ## Tailoring a version
 1. Create or update `data/saved/<slug>.yaml` with `extends: master`.
-2. Override with: `headline`, `summary`, `hiddenBulletIds`, `hiddenProjectIds`, `bulletOverrides`, `experienceBulletOrder`, `projectOrder`, `skillCategoryOrder`, `projectOverrides`.
-3. **Optional (rare):** `experienceAdditions` + `experienceOrder` for version-only experience. `education` override to avoid sidebar duplication.
-4. Lead with the strongest match for the target role; hide lower-priority bullets only when needed for space.
-5. Keep output to one A4 page — shorten wording before hiding factual bullets.
-6. Confirm with the user before dropping in-progress project features they intend to keep.
-7. User can use **Save as base…** to create a new base CV or replace an existing one.
+2. Override with: `headline`, `summary`, `hiddenBulletIds`, `hiddenProjectIds`, `bulletOverrides`, `experienceBulletOrder`, `projectOrder`, `skillCategoryOrder`, `skillOverrides`, `projectOverrides`.
+3. **Never set `roleTitleOverrides`.** Wix automation-era PDF title is **`Mobile Automation Engineer & Release Manager`** (from master; no “QA” in the title).
+4. **Optional (rare):** `experienceAdditions` + `experienceOrder` for thesis (knowledge base only). `education` override to avoid sidebar duplication.
+5. Lead with the strongest match for the target role; hide lower-priority bullets only when needed for space.
+6. Keep output to one A4 page — shorten wording before hiding factual bullets.
+7. Confirm with the user before dropping in-progress project features they intend to keep.
+8. User can use **Save as base…** to create a new base CV or replace an existing one.
+9. For this owner's Wix history: do not hide `wix-qa-automation` when the Automation / Release Manager role is shown — that role should always keep the automation bullet (releases + telemetry alone look incomplete).
+10. **Wix automation role (strict):** PDF title = **Mobile Automation Engineer & Release Manager** only. Never print “QA” in that job title. Do not use `roleTitleOverrides` to change it. Bullet labels may say “Automation” (not “Automation & QA”) unless master says otherwise.
+11. **SQL (this owner):** At Wix — familiar, a few queries; not SQL-focused (data-driven QA wording in master). On **personal projects**, non-trivial SQL/Postgres work is OK when relevant if framed as **AI-assisted** (Cursor, etc.), not solo senior SQL/DBA experience. Do not lead the CV with SQL. Prisma/ORM + relational modeling is the default backend data story.
 
 ## Preview Edit mode
 - Edit the selected base or saved CV in the preview; **Save edits** persists via `PUT /api/cv/version/:id` (local mode) or IndexedDB (web mode).
@@ -37,8 +58,20 @@ alwaysApply: false
 - After polishing a tailored CV, promote with **Save as base…** if that profile should become the new default for that track.
 
 ## When user sends a job description
-- Match keywords to bullet/project `tags` in master.yaml.
-- Create a saved version file under `data/saved/` (or use Tailor with AI in the web UI).
-- Rewrite headline + summary to align with the role; do not invent years of experience or skills not present in master.
-- Summarize changes for the user: what moved up, what was hidden, what was rewritten.
-- Tell the user to click **Reload** in cv-studio after file edits (or use Edit mode on that saved version).
+- Read `data/master.yaml` and `~/.cursor/ziv-knowledge-base.md` first.
+- Match JD themes to existing bullet/project `tags` and KB sections — **emphasize what fits**; silently omit what does not (do not narrate the omission on the CV or letter).
+- Create a saved version under `data/saved/` (or BYO AI tailor in the UI).
+- Rewrite headline + summary to align with the role using **only** master/KB facts.
+- Tell the user what was emphasized, hidden, or reworded — not invented.
+- Tell the user to click **Reload** after file edits.
+
+## Cover letters (optional, per saved version)
+- Store on the saved YAML as `coverLetter` (plain text). Omit when unused.
+- Match the JD and role type using master + that saved/resolved CV; invent nothing.
+- Do not list JD requirements you do not meet, compare yourself negatively to the posting, or apologize for fit — present matching strengths confidently; the reader decides alignment from truthful content only.
+- Shape: greeting → short open → exactly 4 labeled bullets → short close → `Sincerely,` + name.
+- Hard length cap: no longer than a short half-page (~250–300 words), same scale as a typical one-page application letter.
+- Optional master `applicantBrief` for voice/extra context in BYO prompts (not on the A4 CV).
+- For this owner when drafting in Cursor: read `~/.cursor/ziv-knowledge-base.md`; same honesty as CV (titles, skills, SQL, thesis, do-not-oversell list).
+- UI: Cover letter panel on saved CVs (copy prompt → paste → save → print). Do not put the letter on the CV PDF page.
+- Optional `personalNote` on saved YAML: 2–4 sentences for email/LinkedIn/application text box; same honesty rules; save with cover letter via **Save to this CV**.

@@ -81,3 +81,7 @@ education:
       details:
         - "Relevant coursework: algorithms, databases, software engineering."
         - "Thesis or capstone: [topic in one line]."
+
+# Optional — included in cover-letter AI prompts only (not printed on the A4 CV):
+# applicantBrief: >
+#   Short voice notes, preferences, or extra context for cover letters.

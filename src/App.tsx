@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { load as parseYaml } from 'js-yaml';
 import { CvAiTailorPanel } from './components/CvAiTailorPanel';
+import { CvCoverLetterPanel } from './components/CvCoverLetterPanel';
+import { CoverLetterDocument } from './components/CoverLetterDocument';
 import { CvGetStartedPanel } from './components/CvGetStartedPanel';
 import { CvOnboardingWizard } from './components/CvOnboardingWizard';
 import { CvSiteFooter } from './components/CvSiteFooter';
@@ -14,6 +16,10 @@ import {
   buildMasterImportPrompt,
   parseAiMasterYaml,
 } from './lib/buildMasterImportPrompt';
+import {
+  buildCoverLetterPdfTitle,
+  buildCoverLetterPrompt,
+} from './lib/buildCoverLetterPrompt';
 import {
   buildTailorPrompt,
   parseAiTailorYaml,
@@ -91,9 +97,12 @@ export const App = () => {
   const [mode, setMode] = useState<AppMode>('preview');
   const [isEditing, setIsEditing] = useState(false);
   const [showAiPanel, setShowAiPanel] = useState(false);
+  const [showCoverLetterPanel, setShowCoverLetterPanel] = useState(false);
   const [showMasterImportPanel, setShowMasterImportPanel] = useState(false);
   const [jobDescription, setJobDescription] = useState('');
   const [aiReply, setAiReply] = useState('');
+  const [coverLetterDraft, setCoverLetterDraft] = useState('');
+  const [personalNoteDraft, setPersonalNoteDraft] = useState('');
   const [cvImportText, setCvImportText] = useState('');
   const [masterAiReply, setMasterAiReply] = useState('');
   const {
@@ -162,6 +171,19 @@ export const App = () => {
     return getAllVersions(library).find((version) => version.id === selectedVersionId)
       ?? getCompareBase(library);
   }, [library, selectedVersionId]);
+
+  useEffect(() => {
+    setCoverLetterDraft(selectedVersion?.coverLetter ?? '');
+    setPersonalNoteDraft(selectedVersion?.personalNote ?? '');
+    if (selectedVersion?.kind !== 'saved') {
+      setShowCoverLetterPanel(false);
+    }
+  }, [
+    selectedVersion?.id,
+    selectedVersion?.coverLetter,
+    selectedVersion?.personalNote,
+    selectedVersion?.kind,
+  ]);
 
   const activeVersion = isEditing && draftVersion
     ? draftVersion
@@ -812,6 +834,149 @@ export const App = () => {
     }
   };
 
+  const handleCopyCoverLetterPrompt = async () => {
+    if (!master || !resolvedCv || !jobDescription.trim()) {
+      return;
+    }
+
+    setActionError(null);
+
+    try {
+      const prompt = buildCoverLetterPrompt({
+        master,
+        resolvedCv,
+        jobDescription,
+        versionLabel: selectedVersion?.label,
+      });
+      await navigator.clipboard.writeText(prompt);
+      setActionMessage(
+        'Cover letter prompt copied. Paste into ChatGPT or Gemini, then paste the letter below.',
+      );
+    } catch (copyError) {
+      const message = copyError instanceof Error
+        ? copyError.message
+        : 'Failed to copy cover letter prompt.';
+      setActionError(message);
+    }
+  };
+
+  const handleSaveCoverLetter = async () => {
+    if (!selectedVersion || selectedVersion.kind !== 'saved') {
+      return;
+    }
+
+    setActionError(null);
+
+    try {
+      const nextLetter = coverLetterDraft.trim();
+      const nextNote = personalNoteDraft.trim();
+      const saved = await updateVersion({
+        ...selectedVersion,
+        coverLetter: nextLetter,
+        personalNote: nextNote,
+      });
+      setCoverLetterDraft(saved.coverLetter ?? '');
+      setPersonalNoteDraft(saved.personalNote ?? '');
+      setActionMessage(`Application text saved on "${saved.label}".`);
+    } catch (saveError) {
+      const message = saveError instanceof Error
+        ? saveError.message
+        : 'Failed to save cover letter.';
+      setActionError(message);
+    }
+  };
+
+  const handleCopyCoverLetter = async () => {
+    if (!coverLetterDraft.trim()) {
+      return;
+    }
+
+    setActionError(null);
+
+    try {
+      await navigator.clipboard.writeText(coverLetterDraft.trim());
+      setActionMessage('Cover letter copied.');
+    } catch (copyError) {
+      const message = copyError instanceof Error
+        ? copyError.message
+        : 'Failed to copy cover letter.';
+      setActionError(message);
+    }
+  };
+
+  const handleCopyPersonalNote = async () => {
+    if (!personalNoteDraft.trim()) {
+      return;
+    }
+
+    setActionError(null);
+
+    try {
+      await navigator.clipboard.writeText(personalNoteDraft.trim());
+      setActionMessage('Personal note copied.');
+    } catch (copyError) {
+      const message = copyError instanceof Error
+        ? copyError.message
+        : 'Failed to copy personal note.';
+      setActionError(message);
+    }
+  };
+
+  const handlePrintCoverLetter = () => {
+    if (!coverLetterDraft.trim()) {
+      return;
+    }
+
+    if (isEditing) {
+      setActionError('Exit Edit mode before printing the cover letter.');
+      return;
+    }
+
+    const previousTitle = document.title;
+    const pdfTitle = buildCoverLetterPdfTitle(
+      master?.name ?? 'Applicant',
+      selectedVersion?.label ?? 'Role',
+    );
+    document.title = pdfTitle;
+    document.body.classList.add('app-print-cover-letter');
+
+    const cleanup = () => {
+      document.title = previousTitle;
+      document.body.classList.remove('app-print-cover-letter');
+      window.removeEventListener('afterprint', cleanup);
+    };
+
+    window.addEventListener('afterprint', cleanup);
+    requestAnimationFrame(() => window.print());
+  };
+
+  const handleClearCoverLetter = async () => {
+    if (!selectedVersion || selectedVersion.kind !== 'saved') {
+      return;
+    }
+
+    setCoverLetterDraft('');
+
+    if (!selectedVersion.coverLetter?.trim()) {
+      return;
+    }
+
+    setActionError(null);
+
+    try {
+      await updateVersion({
+        ...selectedVersion,
+        coverLetter: '',
+      });
+      setActionMessage(`Cover letter cleared on "${selectedVersion.label}".`);
+    } catch (saveError) {
+      const message = saveError instanceof Error
+        ? saveError.message
+        : 'Failed to clear cover letter.';
+      setActionError(message);
+    }
+  };
+
   if (isLoading) {
     return (
       <main className="app-shell">
@@ -868,7 +1033,9 @@ export const App = () => {
                       key={version.id}
                       value={version.id}
                     >
-                      {version.label}
+                      {version.coverLetter?.trim() || version.personalNote?.trim()
+                        ? `${version.label} · letter`
+                        : version.label}
                     </option>
                   ))}
                 </optgroup>
@@ -1049,11 +1216,32 @@ export const App = () => {
               <button
                 type="button"
                 className="app-button app-button-secondary"
-                onClick={() => setShowAiPanel((open) => !open)}
+                onClick={() => {
+                  setShowCoverLetterPanel(false);
+                  setShowAiPanel((open) => !open);
+                }}
                 disabled={isExampleMode || isEditing}
               >
                 {showAiPanel ? 'Hide AI tailor' : 'Tailor with AI'}
               </button>
+              {isSavedSelected ? (
+                <button
+                  type="button"
+                  className="app-button app-button-secondary"
+                  onClick={() => {
+                    setShowAiPanel(false);
+                    setShowCoverLetterPanel((open) => !open);
+                  }}
+                  disabled={isExampleMode || isEditing}
+                >
+                  {showCoverLetterPanel
+                    ? 'Hide cover letter'
+                    : selectedVersion.coverLetter?.trim()
+                      || selectedVersion.personalNote?.trim()
+                      ? 'Cover letter ✓'
+                      : 'Cover letter'}
+                </button>
+              ) : null}
               <button
                 type="button"
                 className="app-button"
@@ -1188,6 +1376,27 @@ export const App = () => {
         />
       ) : null}
 
+      {showCoverLetterPanel && isSavedSelected && !isExampleMode && !isEditing ? (
+        <CvCoverLetterPanel
+          versionLabel={selectedVersion.label}
+          jobDescription={jobDescription}
+          letterDraft={coverLetterDraft}
+          personalNoteDraft={personalNoteDraft}
+          hasSavedLetter={Boolean(selectedVersion.coverLetter?.trim())}
+          hasSavedPersonalNote={Boolean(selectedVersion.personalNote?.trim())}
+          hasApplicantBrief={Boolean(master.applicantBrief?.trim())}
+          onJobDescriptionChange={setJobDescription}
+          onLetterDraftChange={setCoverLetterDraft}
+          onPersonalNoteDraftChange={setPersonalNoteDraft}
+          onCopyPrompt={handleCopyCoverLetterPrompt}
+          onSaveLetter={handleSaveCoverLetter}
+          onCopyLetter={handleCopyCoverLetter}
+          onCopyPersonalNote={handleCopyPersonalNote}
+          onPrintLetter={handlePrintCoverLetter}
+          onClearLetter={handleClearCoverLetter}
+        />
+      ) : null}
+
       {isEditing && (hiddenBullets.length > 0 || hiddenProjects.length > 0) ? (
         <section className="app-hidden-panel">
           <h2 className="app-hidden-panel-title">Hidden items</h2>
@@ -1230,13 +1439,19 @@ export const App = () => {
         </section>
       ) : null}
 
-      {mode === 'preview' || isEditing ? (
-        <div className="app-preview">
-          <CvDocument
-            cv={resolvedCv}
-            pageRef={pageRef}
-            isEditing={isEditing}
-            editActions={isEditing ? {
+      <div
+        className={
+          mode === 'compare' && !isEditing
+            ? 'app-preview app-preview-print-source'
+            : 'app-preview'
+        }
+        aria-hidden={mode === 'compare' && !isEditing}
+      >
+        <CvDocument
+          cv={resolvedCv}
+          pageRef={pageRef}
+          isEditing={isEditing}
+          editActions={isEditing ? {
               onHeadlineChange: (value) => {
                 applyText((version) => setVersionHeadline(version, value));
               },
@@ -1295,16 +1510,18 @@ export const App = () => {
                 applyStructural((version) => toggleHiddenProject(version, projectId));
               },
             } : undefined}
-          />
-        </div>
-      ) : (
+        />
+        <CoverLetterDocument text={coverLetterDraft} />
+      </div>
+
+      {mode === 'compare' && !isEditing ? (
         <CvCompareView
           baseCv={baseResolvedCv}
           compareCv={resolvedCv}
           baseLabel={compareBase?.label ?? 'Base CV'}
           diffs={diffs}
         />
-      )}
+      ) : null}
 
       <CvSiteFooter isBrowserBackend={isBrowserBackend} />
     </main>

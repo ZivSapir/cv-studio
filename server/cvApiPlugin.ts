@@ -52,12 +52,19 @@ type CvVersionFile = {
   projectsSectionTitle?: string;
   footerNote?: string;
   education?: CvEducationFile;
+  coverLetter?: string;
+  personalNote?: string;
 };
 
 const DATA_DIR = path.resolve(process.cwd(), 'data');
 const BASES_DIR = path.join(DATA_DIR, 'bases');
 const SAVED_DIR = path.join(DATA_DIR, 'saved');
 const DEFAULT_COMPARE_BASE_ID = 'main-cv';
+const PREFERRED_COMPARE_BASE_IDS = [
+  'main-cv',
+  'frontend-cv',
+  'fullstack-cv',
+] as const;
 const LEGACY_BASE_PATH = path.join(DATA_DIR, 'base.yaml');
 
 type DataSource = 'local' | 'example';
@@ -88,8 +95,14 @@ function createUniqueBaseId(label: string, existingIds: string[]): string {
 }
 
 function resolveCompareBaseId(versions: CvVersionFile[]): string {
-  const preferred = versions.find((entry) => entry.id === DEFAULT_COMPARE_BASE_ID);
-  return preferred?.id ?? versions[0]?.id ?? DEFAULT_COMPARE_BASE_ID;
+  for (const preferredId of PREFERRED_COMPARE_BASE_IDS) {
+    const match = versions.find((entry) => entry.id === preferredId);
+    if (match) {
+      return match.id;
+    }
+  }
+
+  return versions[0]?.id ?? DEFAULT_COMPARE_BASE_ID;
 }
 
 function sortBaseProfiles(versions: CvVersionFile[]): CvVersionFile[] {
@@ -171,7 +184,10 @@ async function listBaseVersions(source: DataSource): Promise<CvVersionFile[]> {
 async function listSavedVersions(source: DataSource): Promise<CvVersionFile[]> {
   await ensureSavedDir();
   const entries = await fs.readdir(SAVED_DIR);
-  const versions: CvVersionFile[] = [];
+  const versions: Array<{
+    version: CvVersionFile;
+    createdMs: number;
+  }> = [];
 
   for (const entry of entries) {
     if (source === 'example') {
@@ -184,11 +200,28 @@ async function listSavedVersions(source: DataSource): Promise<CvVersionFile[]> {
       continue;
     }
 
-    const version = await readYamlFile<CvVersionFile>(path.join(SAVED_DIR, entry));
-    versions.push(version);
+    const filePath = path.join(SAVED_DIR, entry);
+    const [version, stat] = await Promise.all([
+      readYamlFile<CvVersionFile>(filePath),
+      fs.stat(filePath),
+    ]);
+    const createdMs = Date.parse(version.createdAt ?? '')
+      || Date.parse(version.updatedAt ?? '')
+      || stat.birthtimeMs
+      || stat.mtimeMs;
+
+    versions.push({
+      version: {
+        ...version,
+        createdAt: version.createdAt ?? new Date(createdMs).toISOString(),
+      },
+      createdMs,
+    });
   }
 
-  return versions.sort((left, right) => left.label.localeCompare(right.label));
+  return versions
+    .sort((left, right) => left.createdMs - right.createdMs)
+    .map((entry) => entry.version);
 }
 
 async function findLocalVersion(sourceId: string): Promise<CvVersionFile | undefined> {
@@ -237,6 +270,12 @@ function stripVersionMeta(version: CvVersionFile): Omit<CvVersionFile, 'id' | 'l
     projectsSectionTitle: version.projectsSectionTitle,
     footerNote: version.footerNote,
     education: version.education,
+    coverLetter: version.coverLetter?.trim()
+      ? version.coverLetter
+      : undefined,
+    personalNote: version.personalNote?.trim()
+      ? version.personalNote
+      : undefined,
   };
 }
 
@@ -411,11 +450,23 @@ export function cvApiPlugin(): Plugin {
 
             const existing = await readYamlFile<CvVersionFile>(resolved.filePath);
             const body = JSON.parse(await readBody(req)) as Partial<CvVersionFile>;
+            const coverLetter = Object.prototype.hasOwnProperty.call(body, 'coverLetter')
+              ? (typeof body.coverLetter === 'string' && body.coverLetter.trim()
+                ? body.coverLetter.trim()
+                : undefined)
+              : existing.coverLetter;
+            const personalNote = Object.prototype.hasOwnProperty.call(body, 'personalNote')
+              ? (typeof body.personalNote === 'string' && body.personalNote.trim()
+                ? body.personalNote.trim()
+                : undefined)
+              : existing.personalNote;
             const nextVersion: CvVersionFile = {
               ...existing,
               ...stripVersionMeta({
                 ...existing,
                 ...body,
+                coverLetter,
+                personalNote,
                 extends: 'master',
               }),
               id: existing.id,
@@ -425,6 +476,14 @@ export function cvApiPlugin(): Plugin {
               createdAt: existing.createdAt,
               updatedAt: new Date().toISOString(),
             };
+
+            if (!nextVersion.coverLetter?.trim()) {
+              delete nextVersion.coverLetter;
+            }
+
+            if (!nextVersion.personalNote?.trim()) {
+              delete nextVersion.personalNote;
+            }
 
             await writeYamlFile(resolved.filePath, nextVersion);
             sendJson(res, 200, {

@@ -53,6 +53,11 @@ ${masterYaml}
 ## Task
 Return ONLY a valid YAML document for a job-specific CV version that extends master.
 Do not wrap it in markdown fences. Do not invent employers, titles, skills, or metrics.
+Never use roleTitleOverrides — all role titles must remain exactly as in master.
+
+Tailoring means emphasis only: reorder bullets/projects/skills and rewrite summary/headline to highlight experience already in master. Do not add JD keywords (tools, platforms, years) that are not supported by master. skillOverrides may reorder or rephrase items already present in master skills — do not add new technologies. experienceAdditions only for thesis-style entries if already in master education/experience pattern — do not invent jobs.
+
+Do not use headline or summary to say you lack JD requirements, are under-qualified, or are a poor match — only truthful strengths; the employer judges fit.
 
 Required fields (document must start with id:):
 - id: kebab-case slug
@@ -70,6 +75,9 @@ Optional fields you may set (only when useful):
 - bulletOverrides
 - projectsSectionTitle
 - footerNote
+- skillOverrides (rephrase/reorder master skills only)
+
+Forbidden fields: roleTitleOverrides, experienceAdditions (unless user/master already defines thesis blocks — prefer omitting)
 
 YAML formatting rules (critical):
 - First line must be id:
