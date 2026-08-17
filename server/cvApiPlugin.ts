@@ -62,6 +62,7 @@ const SAVED_DIR = path.join(DATA_DIR, 'saved');
 const DEFAULT_COMPARE_BASE_ID = 'main-cv';
 const PREFERRED_COMPARE_BASE_IDS = [
   'main-cv',
+  'general-cv',
   'frontend-cv',
   'fullstack-cv',
 ] as const;

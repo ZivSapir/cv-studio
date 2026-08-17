@@ -1,3 +1,5 @@
+import { TbX } from 'react-icons/tb';
+
 type CvAiTailorPanelProps = {
   jobDescription: string;
   aiReply: string;
@@ -6,6 +8,7 @@ type CvAiTailorPanelProps = {
   onAiReplyChange: (value: string) => void;
   onCopyPrompt: () => Promise<void>;
   onApplyReply: () => Promise<void>;
+  onClose: () => void;
 };
 
 export const CvAiTailorPanel = ({
@@ -16,10 +19,21 @@ export const CvAiTailorPanel = ({
   onAiReplyChange,
   onCopyPrompt,
   onApplyReply,
+  onClose,
 }: CvAiTailorPanelProps) => {
   return (
     <section className="app-ai-panel">
-      <h2 className="app-ai-panel-title">Tailor with AI (bring your own)</h2>
+      <div className="app-ai-panel-header">
+        <h2 className="app-ai-panel-title">Tailor with AI (bring your own)</h2>
+        <button
+          type="button"
+          className="app-panel-close"
+          onClick={onClose}
+        >
+          <TbX aria-hidden />
+          Close
+        </button>
+      </div>
       <p className="app-ai-panel-copy">
         Copy a prompt to ChatGPT or Gemini in your browser, then paste the YAML reply here.
         Nothing is sent to our servers.
@@ -33,6 +47,9 @@ export const CvAiTailorPanel = ({
           onChange={(event) => onJobDescriptionChange(event.target.value)}
           placeholder="Paste the job description here"
         />
+        <span className="app-ai-field-hint">
+          Shared with cover letter when you use both for the same role.
+        </span>
       </label>
       <div className="app-toolbar-actions app-toolbar-actions-inline">
         <button

@@ -2,6 +2,7 @@ import type { CvVersion } from '../../types/cv';
 
 const PREFERRED_COMPARE_BASE_IDS = [
   'main-cv',
+  'general-cv',
   'frontend-cv',
   'fullstack-cv',
 ] as const;

@@ -250,7 +250,7 @@ export const CvDocument = ({
                 {entry.details ? (
                   <ul className="cv-education-details">
                     {entry.details.map((detail) => (
-                      <li key={detail}>{detail}</li>
+                      <li key={detail}>{renderBulletText(detail)}</li>
                     ))}
                   </ul>
                 ) : null}
@@ -295,10 +295,12 @@ export const CvDocument = ({
 
                     return entry.roles.map((role) => (
                       <div
-                        key={role.title}
+                        key={role.title.trim() ? role.title : `${entry.id}-role`}
                         className="cv-role-block"
                       >
-                        <h3 className="cv-role-title">{role.title.toUpperCase()}</h3>
+                        {role.title.trim() ? (
+                          <h3 className="cv-role-title">{role.title.toUpperCase()}</h3>
+                        ) : null}
                         <ul className="cv-bullet-list">
                           {role.bullets.map((bullet) => {
                             const bulletIndex = bulletIndexById.get(bullet.id) ?? 0;

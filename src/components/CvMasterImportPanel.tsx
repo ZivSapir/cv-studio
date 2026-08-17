@@ -1,3 +1,5 @@
+import { TbX } from 'react-icons/tb';
+
 type CvMasterImportPanelProps = {
   cvText: string;
   aiReply: string;
@@ -25,9 +27,10 @@ export const CvMasterImportPanel = ({
         <h2 className="app-ai-panel-title">Import existing CV with AI</h2>
         <button
           type="button"
-          className="app-button app-button-secondary app-button-small"
+          className="app-panel-close"
           onClick={onClose}
         >
+          <TbX aria-hidden />
           Close
         </button>
       </div>

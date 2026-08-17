@@ -34,6 +34,19 @@ Open http://localhost:5173/
 
 In local mode, Save / Edit / Set-as-base write YAML under `data/` via the Vite API.
 
+**Your real CV lives here (gitignored):**
+
+| Path | Contents |
+|------|----------|
+| `data/master.yaml` | Facts: experience, projects, skills, education |
+| `data/bases/main-cv.yaml` | Main / default profile |
+| `data/bases/*.yaml` | Other base profiles |
+| `data/saved/*.yaml` | Job-tailored versions |
+
+Run `npm run backup` to write `data/backups/cv-studio-backup-latest.json` (full export of master + all bases + saved). Copy that file to iCloud/Drive occasionally — it is not committed to git.
+
+In the UI, use **My CV** (not Public template) and **Export backup** for the same JSON while `npm run dev` is running.
+
 ## Bring your own AI
 
 This app does **not** ship API keys or call OpenAI / Gemini / Claude for you.

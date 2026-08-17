@@ -1,3 +1,5 @@
+import { TbX } from 'react-icons/tb';
+
 type CvCoverLetterPanelProps = {
   versionLabel: string;
   jobDescription: string;
@@ -16,6 +18,7 @@ type CvCoverLetterPanelProps = {
   onCopyLetter: () => Promise<void>;
   onPrintLetter: () => void;
   onClearLetter: () => Promise<void>;
+  onClose: () => void;
 };
 
 export const CvCoverLetterPanel = ({
@@ -36,15 +39,26 @@ export const CvCoverLetterPanel = ({
   onCopyPersonalNote,
   onPrintLetter,
   onClearLetter,
+  onClose,
 }: CvCoverLetterPanelProps) => {
   return (
     <section className="app-ai-panel">
-      <h2 className="app-ai-panel-title">
-        Cover letter
-        {hasSavedLetter || hasSavedPersonalNote ? (
-          <span className="app-cover-letter-badge"> saved</span>
-        ) : null}
-      </h2>
+      <div className="app-ai-panel-header">
+        <h2 className="app-ai-panel-title">
+          Cover letter
+          {hasSavedLetter || hasSavedPersonalNote ? (
+            <span className="app-cover-letter-badge"> saved</span>
+          ) : null}
+        </h2>
+        <button
+          type="button"
+          className="app-panel-close"
+          onClick={onClose}
+        >
+          <TbX aria-hidden />
+          Close
+        </button>
+      </div>
       <p className="app-ai-panel-copy">
         Optional for this saved CV ({versionLabel}). Copy a prompt to ChatGPT or Gemini,
         paste the letter back, edit, then save. Nothing is sent to our servers.
@@ -61,6 +75,9 @@ export const CvCoverLetterPanel = ({
           onChange={(event) => onJobDescriptionChange(event.target.value)}
           placeholder="Paste the job description here"
         />
+        <span className="app-ai-field-hint">
+          Shared with AI tailor when you use both for the same role.
+        </span>
       </label>
       <div className="app-toolbar-actions app-toolbar-actions-inline">
         <button
@@ -113,7 +130,7 @@ export const CvCoverLetterPanel = ({
           disabled={disabled || !letterDraft.trim()}
           onClick={onPrintLetter}
         >
-          Print / PDF
+          Download Cover Letter PDF
         </button>
         <button
           type="button"
@@ -131,7 +148,7 @@ export const CvCoverLetterPanel = ({
           value={personalNoteDraft}
           disabled={disabled}
           onChange={(event) => onPersonalNoteDraftChange(event.target.value)}
-          placeholder="2–4 sentences for email, LinkedIn, or an application text box"
+          placeholder="2-4 sentences for email, LinkedIn, or an application text box"
         />
       </label>
       <div className="app-toolbar-actions app-toolbar-actions-inline">

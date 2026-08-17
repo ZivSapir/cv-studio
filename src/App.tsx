@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { load as parseYaml } from 'js-yaml';
+import { TbSettings } from 'react-icons/tb';
 import { CvAiTailorPanel } from './components/CvAiTailorPanel';
 import { CvCoverLetterPanel } from './components/CvCoverLetterPanel';
 import { CoverLetterDocument } from './components/CoverLetterDocument';
@@ -10,7 +11,11 @@ import { CvCompareView } from './components/CvCompareView';
 import { CvDocument } from './components/CvDocument';
 import { useCvLibrary } from './hooks/useCvLibrary';
 import { useEditHistory } from './hooks/useEditHistory';
-import { CvBackupControls } from './components/CvBackupControls';
+import { CvDataSettingsModal } from './components/CvDataSettingsModal';
+import { CvToolbarMenu } from './components/CvToolbarMenu';
+import { CvToolsSidebar } from './components/CvToolsSidebar';
+import type { SidebarSection } from './components/CvToolsSidebar';
+import { CvVersionSelect } from './components/CvVersionSelect';
 import { CvMasterImportPanel } from './components/CvMasterImportPanel';
 import {
   buildMasterImportPrompt,
@@ -96,8 +101,9 @@ export const App = () => {
   const [selectedVersionId, setSelectedVersionId] = useState(DEFAULT_VERSION_ID);
   const [mode, setMode] = useState<AppMode>('preview');
   const [isEditing, setIsEditing] = useState(false);
-  const [showAiPanel, setShowAiPanel] = useState(false);
-  const [showCoverLetterPanel, setShowCoverLetterPanel] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [openSection, setOpenSection] = useState<SidebarSection | null>(null);
+  const [showDataSettings, setShowDataSettings] = useState(false);
   const [showMasterImportPanel, setShowMasterImportPanel] = useState(false);
   const [jobDescription, setJobDescription] = useState('');
   const [aiReply, setAiReply] = useState('');
@@ -176,7 +182,7 @@ export const App = () => {
     setCoverLetterDraft(selectedVersion?.coverLetter ?? '');
     setPersonalNoteDraft(selectedVersion?.personalNote ?? '');
     if (selectedVersion?.kind !== 'saved') {
-      setShowCoverLetterPanel(false);
+      setOpenSection((section) => (section === 'coverLetter' ? null : section));
     }
   }, [
     selectedVersion?.id,
@@ -184,6 +190,12 @@ export const App = () => {
     selectedVersion?.personalNote,
     selectedVersion?.kind,
   ]);
+
+  useEffect(() => {
+    if (isEditing || isExampleMode) {
+      setOpenSection(null);
+    }
+  }, [isEditing, isExampleMode]);
 
   const activeVersion = isEditing && draftVersion
     ? draftVersion
@@ -296,6 +308,36 @@ export const App = () => {
     };
   }, [isEditing, redo, undo]);
 
+  useEffect(() => {
+    if (!showDataSettings && !showMasterImportPanel && openSection === null) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') {
+        return;
+      }
+
+      if (showDataSettings) {
+        setShowDataSettings(false);
+        return;
+      }
+
+      if (showMasterImportPanel) {
+        setShowMasterImportPanel(false);
+        return;
+      }
+
+      setOpenSection(null);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [openSection, showDataSettings, showMasterImportPanel]);
+
   const handleSelectVersion = (versionId: string) => {
     if (isEditing) {
       const confirmed = window.confirm(
@@ -321,8 +363,22 @@ export const App = () => {
     setMode('preview');
     resetEditHistory(selectedVersion);
     setIsEditing(true);
+    setOpenSection(null);
     setActionMessage(null);
     setActionError(null);
+  };
+
+  const handleDataSourceChange = (source: CvDataSource) => {
+    if (source === dataSource) {
+      return;
+    }
+
+    if (isEditing) {
+      return;
+    }
+
+    setDataSource(source);
+    setOpenSection(null);
   };
 
   const handleCancelEditMode = () => {
@@ -800,7 +856,7 @@ export const App = () => {
   };
 
   const handleApplyAiReply = async () => {
-    if (!aiReply.trim()) {
+    if (!aiReply.trim() || isEditing || isExampleMode) {
       return;
     }
 
@@ -823,7 +879,7 @@ export const App = () => {
         label: parsed.label || parsed.id,
       });
       setSelectedVersionId(saved.id);
-      setShowAiPanel(false);
+      setOpenSection(null);
       setAiReply('');
       setActionMessage(`Created saved CV "${saved.label}".`);
     } catch (applyError) {
@@ -861,7 +917,7 @@ export const App = () => {
   };
 
   const handleSaveCoverLetter = async () => {
-    if (!selectedVersion || selectedVersion.kind !== 'saved') {
+    if (!selectedVersion || selectedVersion.kind !== 'saved' || isEditing || isExampleMode) {
       return;
     }
 
@@ -951,7 +1007,7 @@ export const App = () => {
   };
 
   const handleClearCoverLetter = async () => {
-    if (!selectedVersion || selectedVersion.kind !== 'saved') {
+    if (!selectedVersion || selectedVersion.kind !== 'saved' || isEditing || isExampleMode) {
       return;
     }
 
@@ -998,261 +1054,266 @@ export const App = () => {
   const isEditingBase = selectedVersion.kind === 'base'
     || library.bases.some((base) => base.id === selectedVersion.id);
 
+  const toolsAvailable = !isExampleMode && !isEditing;
+  const coverLetterAvailable = isSavedSelected && toolsAvailable;
+
+  const coverLetterSectionContent = coverLetterAvailable ? (
+    <CvCoverLetterPanel
+      versionLabel={selectedVersion.label}
+      jobDescription={jobDescription}
+      letterDraft={coverLetterDraft}
+      personalNoteDraft={personalNoteDraft}
+      hasSavedLetter={Boolean(selectedVersion.coverLetter?.trim())}
+      hasSavedPersonalNote={Boolean(selectedVersion.personalNote?.trim())}
+      hasApplicantBrief={Boolean(master.applicantBrief?.trim())}
+      onJobDescriptionChange={setJobDescription}
+      onLetterDraftChange={setCoverLetterDraft}
+      onPersonalNoteDraftChange={setPersonalNoteDraft}
+      onCopyPrompt={handleCopyCoverLetterPrompt}
+      onSaveLetter={handleSaveCoverLetter}
+      onCopyLetter={handleCopyCoverLetter}
+      onCopyPersonalNote={handleCopyPersonalNote}
+      onPrintLetter={handlePrintCoverLetter}
+      onClearLetter={handleClearCoverLetter}
+      onClose={() => setOpenSection(null)}
+    />
+  ) : null;
+
+  const aiTailorSectionContent = toolsAvailable ? (
+    <CvAiTailorPanel
+      jobDescription={jobDescription}
+      aiReply={aiReply}
+      onJobDescriptionChange={setJobDescription}
+      onAiReplyChange={setAiReply}
+      onCopyPrompt={handleCopyAiPrompt}
+      onApplyReply={handleApplyAiReply}
+      onClose={() => setOpenSection(null)}
+    />
+  ) : null;
+
   return (
     <main className="app-shell">
-      <header className="app-toolbar">
-        <div className="app-toolbar-row">
-          <div className="app-toolbar-group">
-            <label
-              className="app-label"
-              htmlFor="cv-version"
+      <CvToolsSidebar
+        isOpen={sidebarOpen}
+        openSection={openSection}
+        isCoverLetterAvailable={coverLetterAvailable}
+        areToolsAvailable={toolsAvailable}
+        coverLetterUnavailableHint={
+          isEditing
+            ? 'Exit Edit mode first'
+            : isExampleMode
+              ? 'Not available on the public template'
+              : isSavedSelected
+                ? undefined
+                : 'Save a copy of this CV first'
+        }
+        aiTailorUnavailableHint={
+          isEditing
+            ? 'Exit Edit mode first'
+            : isExampleMode
+              ? 'Not available on the public template'
+              : undefined
+        }
+        onClose={() => setSidebarOpen(false)}
+        onToggleSection={(section) => {
+          setOpenSection((current) => (current === section ? null : section));
+        }}
+        coverLetterContent={coverLetterSectionContent}
+        aiTailorContent={aiTailorSectionContent}
+      />
+
+      {showDataSettings ? (
+        <CvDataSettingsModal
+          dataSource={dataSource}
+          dataSourceDisabled={isEditing}
+          dataActionsDisabled={!canMutateData}
+          showResetToExamples={isBrowserBackend}
+          onClose={() => setShowDataSettings(false)}
+          onDataSourceChange={handleDataSourceChange}
+          onExport={handleExportBackup}
+          onImportBackupFile={handleImportBackupFile}
+          onImportMasterFile={handleImportMasterFile}
+          onResetToExamples={handleResetToExamples}
+        />
+      ) : null}
+
+      <div className="app-main">
+        <header className="app-toolbar">
+          {!sidebarOpen ? (
+            <button
+              type="button"
+              className="app-button app-button-secondary app-toolbar-sidebar-open"
+              onClick={() => setSidebarOpen(true)}
             >
-              CV
-            </label>
-            <select
-              id="cv-version"
-              className="app-select"
-              value={selectedVersionId}
-              disabled={isEditing}
-              onChange={(event) => handleSelectVersion(event.target.value)}
-            >
-              <optgroup label="Base CVs">
-                {library.bases.map((version) => (
-                  <option
-                    key={version.id}
-                    value={version.id}
-                  >
-                    {version.label}
-                  </option>
-                ))}
-              </optgroup>
-              {library.saved.length ? (
-                <optgroup label="Saved">
-                  {library.saved.map((version) => (
-                    <option
-                      key={version.id}
-                      value={version.id}
-                    >
-                      {version.coverLetter?.trim() || version.personalNote?.trim()
-                        ? `${version.label} · letter`
-                        : version.label}
-                    </option>
-                  ))}
-                </optgroup>
-              ) : null}
-            </select>
-          </div>
+              Tools
+            </button>
+          ) : null}
 
-          <div className="app-toolbar-group">
-            <span className="app-label">Data</span>
-            <div className="app-segmented">
-              <button
-                type="button"
-                className={dataSource === 'local' ? 'app-segment app-segment-active' : 'app-segment'}
-                disabled={isEditing}
-                onClick={() => setDataSource('local')}
-              >
-                My CV
-              </button>
-              <button
-                type="button"
-                className={dataSource === 'example' ? 'app-segment app-segment-active' : 'app-segment'}
-                disabled={isEditing}
-                onClick={() => setDataSource('example')}
-              >
-                Public template
-              </button>
-            </div>
-          </div>
-
-          <div className="app-toolbar-group">
-            <span className="app-label">View</span>
-            <div className="app-segmented">
-              <button
-                type="button"
-                className={mode === 'preview' && !isEditing ? 'app-segment app-segment-active' : 'app-segment'}
-                disabled={isEditing}
-                onClick={() => setMode('preview')}
-              >
-                Preview
-              </button>
-              <button
-                type="button"
-                className={isEditing ? 'app-segment app-segment-active' : 'app-segment'}
-                disabled={isExampleMode}
-                onClick={() => {
-                  if (isEditing) {
-                    return;
-                  }
-
-                  handleEnterEditMode();
-                }}
-              >
-                Edit
-              </button>
-              <button
-                type="button"
-                className={mode === 'compare' ? 'app-segment app-segment-active' : 'app-segment'}
-                onClick={() => setMode('compare')}
-                disabled={isCompareBaseSelected || isEditing}
-              >
-                Compare
-              </button>
-            </div>
-          </div>
-
-          <CvBackupControls
-            disabled={!canMutateData}
-            showResetToExamples={isBrowserBackend}
-            onExport={handleExportBackup}
-            onImportBackupFile={handleImportBackupFile}
-            onImportMasterFile={handleImportMasterFile}
-            onResetToExamples={handleResetToExamples}
+          <CvVersionSelect
+            bases={library.bases}
+            saved={library.saved}
+            value={selectedVersionId}
+            disabled={isEditing}
+            onChange={handleSelectVersion}
           />
-        </div>
 
-        <div className="app-toolbar-actions">
-          {isEditing ? (
-            <>
-              <button
-                type="button"
-                className="app-button app-button-secondary"
-                onClick={undo}
-                disabled={!canUndo || isSavingEdits}
-              >
-                Undo
-              </button>
-              <button
-                type="button"
-                className="app-button app-button-secondary"
-                onClick={redo}
-                disabled={!canRedo || isSavingEdits}
-              >
-                Redo
-              </button>
-              {isEditingBase ? (
-                <>
-                  <button
-                    type="button"
-                    className="app-button"
-                    onClick={() => void handleSaveEditAsCopy()}
-                    disabled={isSavingEdits}
-                  >
-                    {isSavingEdits ? 'Saving…' : 'Save as copy…'}
-                  </button>
-                  <button
-                    type="button"
-                    className="app-button app-button-secondary"
-                    onClick={() => void handleUpdateBaseFromEdits()}
-                    disabled={isSavingEdits}
-                  >
-                    Update base
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    className="app-button"
-                    onClick={() => void handleSaveToCurrentVersion()}
-                    disabled={isSavingEdits}
-                  >
-                    {isSavingEdits ? 'Saving…' : 'Save'}
-                  </button>
-                  <button
-                    type="button"
-                    className="app-button app-button-secondary"
-                    onClick={() => void handleSaveEditAsCopy()}
-                    disabled={isSavingEdits}
-                  >
-                    Save as copy…
-                  </button>
-                </>
-              )}
-              <button
-                type="button"
-                className="app-button app-button-secondary"
-                onClick={handleCancelEditMode}
-                disabled={isSavingEdits}
-              >
-                Cancel
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                type="button"
-                className="app-button app-button-secondary"
-                onClick={() => void reloadLibrary()}
-              >
-                Reload
-              </button>
-              <button
-                type="button"
-                className="app-button app-button-secondary"
-                onClick={() => void handleSaveCopy()}
-                disabled={isExampleMode}
-              >
-                Save copy
-              </button>
-              <button
-                type="button"
-                className="app-button app-button-secondary"
-                onClick={() => void handleSetAsBase()}
-                disabled={isExampleMode}
-              >
-                Save as base…
-              </button>
-              {isSavedSelected ? (
-                <button
-                  type="button"
-                  className="app-button app-button-danger"
-                  onClick={() => void handleDeleteSaved()}
-                  disabled={isExampleMode}
-                >
-                  Delete
-                </button>
-              ) : null}
-              <button
-                type="button"
-                className="app-button app-button-secondary"
-                onClick={() => {
-                  setShowCoverLetterPanel(false);
-                  setShowAiPanel((open) => !open);
-                }}
-                disabled={isExampleMode || isEditing}
-              >
-                {showAiPanel ? 'Hide AI tailor' : 'Tailor with AI'}
-              </button>
-              {isSavedSelected ? (
+          <div className="app-segmented app-segmented-center">
+            <button
+              type="button"
+              className={mode === 'preview' && !isEditing ? 'app-segment app-segment-active' : 'app-segment'}
+              disabled={isEditing}
+              onClick={() => setMode('preview')}
+            >
+              Preview
+            </button>
+            <button
+              type="button"
+              className={isEditing ? 'app-segment app-segment-active' : 'app-segment'}
+              disabled={isExampleMode}
+              onClick={() => {
+                if (isEditing) {
+                  return;
+                }
+
+                handleEnterEditMode();
+              }}
+            >
+              Edit
+            </button>
+            <button
+              type="button"
+              className={mode === 'compare' ? 'app-segment app-segment-active' : 'app-segment'}
+              onClick={() => setMode('compare')}
+              disabled={isCompareBaseSelected || isEditing}
+            >
+              Compare
+            </button>
+          </div>
+
+          <div className="app-toolbar-actions">
+            <button
+              type="button"
+              className="app-button app-button-secondary app-settings-trigger"
+              aria-label="Open data settings"
+              title="Data settings"
+              onClick={() => setShowDataSettings(true)}
+            >
+              <TbSettings aria-hidden />
+            </button>
+            <span
+              className="app-toolbar-divider"
+              aria-hidden
+            />
+            {isEditing ? (
+              <>
                 <button
                   type="button"
                   className="app-button app-button-secondary"
-                  onClick={() => {
-                    setShowAiPanel(false);
-                    setShowCoverLetterPanel((open) => !open);
-                  }}
-                  disabled={isExampleMode || isEditing}
+                  onClick={undo}
+                  disabled={!canUndo || isSavingEdits}
                 >
-                  {showCoverLetterPanel
-                    ? 'Hide cover letter'
-                    : selectedVersion.coverLetter?.trim()
-                      || selectedVersion.personalNote?.trim()
-                      ? 'Cover letter ✓'
-                      : 'Cover letter'}
+                  Undo
                 </button>
-              ) : null}
-              <button
-                type="button"
-                className="app-button"
-                onClick={handleDownloadPdf}
-              >
-                Download PDF
-              </button>
-            </>
-          )}
-        </div>
-      </header>
+                <button
+                  type="button"
+                  className="app-button app-button-secondary"
+                  onClick={redo}
+                  disabled={!canRedo || isSavingEdits}
+                >
+                  Redo
+                </button>
+                {isEditingBase ? (
+                  <>
+                    <button
+                      type="button"
+                      className="app-button"
+                      onClick={() => void handleSaveEditAsCopy()}
+                      disabled={isSavingEdits}
+                    >
+                      {isSavingEdits ? 'Saving…' : 'Save as copy…'}
+                    </button>
+                    <button
+                      type="button"
+                      className="app-button app-button-secondary"
+                      onClick={() => void handleUpdateBaseFromEdits()}
+                      disabled={isSavingEdits}
+                    >
+                      Update base
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      className="app-button"
+                      onClick={() => void handleSaveToCurrentVersion()}
+                      disabled={isSavingEdits}
+                    >
+                      {isSavingEdits ? 'Saving…' : 'Save'}
+                    </button>
+                    <button
+                      type="button"
+                      className="app-button app-button-secondary"
+                      onClick={() => void handleSaveEditAsCopy()}
+                      disabled={isSavingEdits}
+                    >
+                      Save as copy…
+                    </button>
+                  </>
+                )}
+                <button
+                  type="button"
+                  className="app-button app-button-secondary"
+                  onClick={handleCancelEditMode}
+                  disabled={isSavingEdits}
+                >
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <>
+                <CvToolbarMenu
+                  label="More CV actions"
+                  items={[
+                    {
+                      id: 'save-copy',
+                      label: 'Save copy',
+                      disabled: isExampleMode,
+                      onSelect: () => void handleSaveCopy(),
+                    },
+                    {
+                      id: 'save-as-base',
+                      label: 'Save as base…',
+                      disabled: isExampleMode,
+                      onSelect: () => void handleSetAsBase(),
+                    },
+                    {
+                      id: 'reload',
+                      label: 'Reload',
+                      onSelect: () => void reloadLibrary(),
+                    },
+                    ...(isSavedSelected
+                      ? [{
+                          id: 'delete',
+                          label: 'Delete saved CV',
+                          isDanger: true,
+                          disabled: isExampleMode,
+                          onSelect: () => void handleDeleteSaved(),
+                        }]
+                      : []),
+                  ]}
+                />
+                <button
+                  type="button"
+                  className="app-button"
+                  onClick={handleDownloadPdf}
+                >
+                  Download CV PDF
+                </button>
+              </>
+            )}
+          </div>
+        </header>
 
       {isExampleMode ? (
         <p
@@ -1362,38 +1423,6 @@ export const App = () => {
         <CvOnboardingWizard
           onCancel={() => setShowOnboarding(false)}
           onComplete={handleCompleteOnboarding}
-        />
-      ) : null}
-
-      {showAiPanel && !isExampleMode && !isEditing ? (
-        <CvAiTailorPanel
-          jobDescription={jobDescription}
-          aiReply={aiReply}
-          onJobDescriptionChange={setJobDescription}
-          onAiReplyChange={setAiReply}
-          onCopyPrompt={handleCopyAiPrompt}
-          onApplyReply={handleApplyAiReply}
-        />
-      ) : null}
-
-      {showCoverLetterPanel && isSavedSelected && !isExampleMode && !isEditing ? (
-        <CvCoverLetterPanel
-          versionLabel={selectedVersion.label}
-          jobDescription={jobDescription}
-          letterDraft={coverLetterDraft}
-          personalNoteDraft={personalNoteDraft}
-          hasSavedLetter={Boolean(selectedVersion.coverLetter?.trim())}
-          hasSavedPersonalNote={Boolean(selectedVersion.personalNote?.trim())}
-          hasApplicantBrief={Boolean(master.applicantBrief?.trim())}
-          onJobDescriptionChange={setJobDescription}
-          onLetterDraftChange={setCoverLetterDraft}
-          onPersonalNoteDraftChange={setPersonalNoteDraft}
-          onCopyPrompt={handleCopyCoverLetterPrompt}
-          onSaveLetter={handleSaveCoverLetter}
-          onCopyLetter={handleCopyCoverLetter}
-          onCopyPersonalNote={handleCopyPersonalNote}
-          onPrintLetter={handlePrintCoverLetter}
-          onClearLetter={handleClearCoverLetter}
         />
       ) : null}
 
@@ -1524,6 +1553,7 @@ export const App = () => {
       ) : null}
 
       <CvSiteFooter isBrowserBackend={isBrowserBackend} />
+      </div>
     </main>
   );
 };

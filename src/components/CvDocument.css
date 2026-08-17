@@ -194,6 +194,14 @@
   line-height: 1.36;
 }
 
+.cv-education-details strong {
+  font-weight: 700;
+}
+
+.cv-bullet-list strong {
+  font-weight: 700;
+}
+
 .cv-education-details li + li {
   margin-top: 0.8mm;
 }

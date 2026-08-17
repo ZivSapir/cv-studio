@@ -26,6 +26,7 @@ alwaysApply: false
 ## Voice & content rules
 - **No em dashes (`—`)** in CV copy (headline, summary, bullets, projects, education). They render as an overly wide dash in PDF. Use a comma, colon, semicolon, or a regular hyphen `-` instead (e.g. `Engineer - Platform`, not `Engineer — Platform`).
 - **No self-disqualifying copy** in headline, summary, bullet overrides, projects, `coverLetter`, or `personalNote`. Do not invent facts. **Do not tell the employer you fail their requirements** — no volunteering gaps, missing years, "not aligned with…", "I lack X from the JD", "upfront…", or apologies for fit. Present only truthful strengths; **they** judge match from what you show. Private `notes` on a version is for agent context only (e.g. what not to claim).
+- **Natural angle, not JD cosplay.** Match the role by spotlighting real technical work and high skills. Do **not** bolt on awkward, over-specific closers or soft-skill lines that sound written for the posting (e.g. "Motivated to configure workspaces and guide users on Monday.com", "Strong English", "university TA…", "passionate about client enablement"). Summaries should read like a strong engineer/practitioner describing what they do well; motivation lines stay general and process/skill oriented when used at all (e.g. clearer processes, less manual work), not product- or duty-name echoes.
 - **No YAML line breaks inside hyphenated words.** Folded `>` blocks turn newlines into spaces, so `cross-\nrepository` becomes `cross- repository` on the PDF. Keep hyphenated words on one line (`cross-repository`).
 - Prefer not to put candidate home city, age, or gender in headline or summary unless the user asks for it.
 - Employer location on an experience line (company + city) is fine — that describes the employer, not the candidate.
@@ -43,7 +44,7 @@ alwaysApply: false
 1. Create or update `data/saved/<slug>.yaml` with `extends: master`.
 2. Override with: `headline`, `summary`, `hiddenBulletIds`, `hiddenProjectIds`, `bulletOverrides`, `experienceBulletOrder`, `projectOrder`, `skillCategoryOrder`, `skillOverrides`, `projectOverrides`.
 3. **Never set `roleTitleOverrides`.** Wix automation-era PDF title is **`Mobile Automation Engineer & Release Manager`** (from master; no “QA” in the title).
-4. **Optional (rare):** `experienceAdditions` + `experienceOrder` for thesis (knowledge base only). `education` override to avoid sidebar duplication.
+4. **Optional (rare):** `experienceAdditions` + `experienceOrder` for thesis (knowledge base only). `education` override to avoid sidebar duplication. When overriding `education`, keep the B.Sc. detail from master (`Strong C coursework…; MATLAB…`) unless the education column overflows one page — then drop that line only.
 5. Lead with the strongest match for the target role; hide lower-priority bullets only when needed for space.
 6. Keep output to one A4 page — shorten wording before hiding factual bullets.
 7. Confirm with the user before dropping in-progress project features they intend to keep.
@@ -51,6 +52,7 @@ alwaysApply: false
 9. For this owner's Wix history: do not hide `wix-qa-automation` when the Automation / Release Manager role is shown — that role should always keep the automation bullet (releases + telemetry alone look incomplete).
 10. **Wix automation role (strict):** PDF title = **Mobile Automation Engineer & Release Manager** only. Never print “QA” in that job title. Do not use `roleTitleOverrides` to change it. Bullet labels may say “Automation” (not “Automation & QA”) unless master says otherwise.
 11. **SQL (this owner):** At Wix — familiar, a few queries; not SQL-focused (data-driven QA wording in master). On **personal projects**, non-trivial SQL/Postgres work is OK when relevant if framed as **AI-assisted** (Cursor, etc.), not solo senior SQL/DBA experience. Do not lead the CV with SQL. Prisma/ORM + relational modeling is the default backend data story.
+12. **react-native-ui-lib:** When this library appears in headline, summary, bullets, or skills, keep it framed as **open-source** (master uses “open-source react-native-ui-lib (7.1k+ stars)”). Do not strip “open-source” in `bulletOverrides` / `projectOverrides`.
 
 ## Preview Edit mode
 - Edit the selected base or saved CV in the preview; **Save edits** persists via `PUT /api/cv/version/:id` (local mode) or IndexedDB (web mode).
@@ -64,6 +66,7 @@ alwaysApply: false
 - Rewrite headline + summary to align with the role using **only** master/KB facts.
 - Tell the user what was emphasized, hidden, or reworded — not invented.
 - Tell the user to click **Reload** after file edits.
+- **Page fit (agents):** After editing `data/saved/*.yaml` or `data/bases/*.yaml`, run `npm run check-page-fit -- <version-id>` from the repo root (uses the same A4 measurement as preview). Exit `0` = fits one page; exit `1` = overflow (~px on stderr). Fix overflow before handing off; do not wait for the user to notice whitespace or clipping. Requires `playwright` + Chromium once: `npx playwright install chromium`.
 
 ## Cover letters (optional, per saved version)
 - Store on the saved YAML as `coverLetter` (plain text). Omit when unused.

@@ -35,3 +35,4 @@ data/bases/*
 data/saved/*
 !data/saved/.gitkeep
 !data/saved/*.example.yaml
+data/backups/

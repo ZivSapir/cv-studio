@@ -172,7 +172,7 @@ export function mergeCvVersion(
     projects,
     skills,
     education: version.education ?? master.education,
-    projectsSectionTitle: version.projectsSectionTitle ?? 'Projects',
+    projectsSectionTitle: version.projectsSectionTitle ?? 'Personal Projects',
     footerNote: version.footerNote,
   };
 }

@@ -8,7 +8,9 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "setup": "node scripts/setup-local-data.mjs"
+    "setup": "node scripts/setup-local-data.mjs",
+    "backup": "node scripts/export-local-backup.mjs",
+    "check-page-fit": "node scripts/check-page-fit.mjs"
   },
   "dependencies": {
     "diff": "^9.0.0",
@@ -24,6 +26,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.3",
     "oxlint": "^1.71.0",
+    "playwright": "^1.58.2",
     "typescript": "~6.0.2",
     "vite": "^8.1.1"
   }
