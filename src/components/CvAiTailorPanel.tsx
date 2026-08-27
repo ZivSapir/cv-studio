@@ -48,7 +48,7 @@ export const CvAiTailorPanel = ({
           placeholder="Paste the job description here"
         />
         <span className="app-ai-field-hint">
-          Shared with cover letter when you use both for the same role.
+          Shared with cover letter. Stored on the saved CV when you Apply as saved CV.
         </span>
       </label>
       <div className="app-toolbar-actions app-toolbar-actions-inline">

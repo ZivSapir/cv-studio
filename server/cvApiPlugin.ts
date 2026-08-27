@@ -54,6 +54,7 @@ type CvVersionFile = {
   education?: CvEducationFile;
   coverLetter?: string;
   personalNote?: string;
+  jobDescription?: string;
 };
 
 const DATA_DIR = path.resolve(process.cwd(), 'data');
@@ -277,6 +278,9 @@ function stripVersionMeta(version: CvVersionFile): Omit<CvVersionFile, 'id' | 'l
     personalNote: version.personalNote?.trim()
       ? version.personalNote
       : undefined,
+    jobDescription: version.jobDescription?.trim()
+      ? version.jobDescription
+      : undefined,
   };
 }
 
@@ -461,6 +465,11 @@ export function cvApiPlugin(): Plugin {
                 ? body.personalNote.trim()
                 : undefined)
               : existing.personalNote;
+            const jobDescription = Object.prototype.hasOwnProperty.call(body, 'jobDescription')
+              ? (typeof body.jobDescription === 'string' && body.jobDescription.trim()
+                ? body.jobDescription.trim()
+                : undefined)
+              : existing.jobDescription;
             const nextVersion: CvVersionFile = {
               ...existing,
               ...stripVersionMeta({
@@ -468,6 +477,7 @@ export function cvApiPlugin(): Plugin {
                 ...body,
                 coverLetter,
                 personalNote,
+                jobDescription,
                 extends: 'master',
               }),
               id: existing.id,
@@ -484,6 +494,10 @@ export function cvApiPlugin(): Plugin {
 
             if (!nextVersion.personalNote?.trim()) {
               delete nextVersion.personalNote;
+            }
+
+            if (!nextVersion.jobDescription?.trim()) {
+              delete nextVersion.jobDescription;
             }
 
             await writeYamlFile(resolved.filePath, nextVersion);

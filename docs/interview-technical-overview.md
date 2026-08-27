@@ -65,7 +65,7 @@ Overlay that **extends** master. Typical fields:
 - **Space (one-page fit):** `hiddenBulletIds`, `hiddenProjectIds`
 - **Order:** `experienceOrder`, `experienceBulletOrder`, `projectOrder`, `skillCategoryOrder`
 - **Kinds:** `base` (reusable profiles) vs `saved` (per-job copies)
-- **Extras (not on A4):** `coverLetter`, `personalNote`, `notes`
+- **Extras (not on A4):** `coverLetter`, `personalNote`, `jobDescription`, `notes`
 
 ### Merge rules (important talking points)
 

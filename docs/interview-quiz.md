@@ -85,7 +85,7 @@ Mark each question: ✅ know it / 🤔 fuzzy / ❌ blank. Re-read `docs/intervie
 7. Examples: `headline`/`summary` override; `hiddenBulletIds` / `hiddenProjectIds`; `bulletOverrides` / `projectOverrides` / `skillOverrides`; order arrays; `experienceAdditions`.
 8. **Name and contact** (from merge). (Also: Edit UI is designed not to rewrite master.)
 9. **Base** = reusable profile (e.g. frontend / fullstack). **Saved** = per-job tailored copy (often with cover letter / notes).
-10. e.g. `coverLetter`, `personalNote`, `notes`; plus master-only `applicantBrief` / `internalPeriod` (not PDF content). Tags are data, not a main document “chips” feature.
+10. e.g. `coverLetter`, `personalNote`, `jobDescription`, `notes`; plus master-only `applicantBrief` / `internalPeriod` (not PDF content). Tags are data, not a main document “chips” feature.
 
 ### Merge engine
 

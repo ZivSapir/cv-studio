@@ -9,6 +9,7 @@ type CvCoverLetterPanelProps = {
   disabled?: boolean;
   personalNoteDraft: string;
   hasSavedPersonalNote: boolean;
+  hasSavedJobDescription: boolean;
   onPersonalNoteDraftChange: (value: string) => void;
   onCopyPersonalNote: () => Promise<void>;
   onJobDescriptionChange: (value: string) => void;
@@ -28,6 +29,7 @@ export const CvCoverLetterPanel = ({
   personalNoteDraft,
   hasSavedLetter,
   hasSavedPersonalNote,
+  hasSavedJobDescription,
   hasApplicantBrief,
   disabled,
   onJobDescriptionChange,
@@ -60,8 +62,9 @@ export const CvCoverLetterPanel = ({
         </button>
       </div>
       <p className="app-ai-panel-copy">
-        Optional for this saved CV ({versionLabel}). Copy a prompt to ChatGPT or Gemini,
-        paste the letter back, edit, then save. Nothing is sent to our servers.
+        Optional for this saved CV ({versionLabel}). If a job description is stored on this
+        CV, it loads here automatically. Copy a prompt to ChatGPT or Gemini, paste the letter
+        back, edit, then save. Nothing is sent to our servers.
         {hasApplicantBrief
           ? ' Your master applicantBrief is included in the prompt.'
           : null}
@@ -73,10 +76,12 @@ export const CvCoverLetterPanel = ({
           value={jobDescription}
           disabled={disabled}
           onChange={(event) => onJobDescriptionChange(event.target.value)}
-          placeholder="Paste the job description here"
+          placeholder="Paste the job description here (saved with this CV)"
         />
         <span className="app-ai-field-hint">
-          Shared with AI tailor when you use both for the same role.
+          {hasSavedJobDescription
+            ? 'Loaded from this saved CV. Shared with AI tailor; Save keeps it on this version.'
+            : 'Saved on this CV when you Save or Apply a tailored YAML. Shared with AI tailor.'}
         </span>
       </label>
       <div className="app-toolbar-actions app-toolbar-actions-inline">
@@ -108,8 +113,10 @@ export const CvCoverLetterPanel = ({
             || (
               !letterDraft.trim()
               && !personalNoteDraft.trim()
+              && !jobDescription.trim()
               && !hasSavedLetter
               && !hasSavedPersonalNote
+              && !hasSavedJobDescription
             )
           }
           onClick={() => void onSaveLetter()}

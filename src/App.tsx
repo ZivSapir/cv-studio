@@ -181,6 +181,9 @@ export const App = () => {
   useEffect(() => {
     setCoverLetterDraft(selectedVersion?.coverLetter ?? '');
     setPersonalNoteDraft(selectedVersion?.personalNote ?? '');
+    if (selectedVersion?.kind === 'saved') {
+      setJobDescription(selectedVersion.jobDescription ?? '');
+    }
     if (selectedVersion?.kind !== 'saved') {
       setOpenSection((section) => (section === 'coverLetter' ? null : section));
     }
@@ -188,6 +191,7 @@ export const App = () => {
     selectedVersion?.id,
     selectedVersion?.coverLetter,
     selectedVersion?.personalNote,
+    selectedVersion?.jobDescription,
     selectedVersion?.kind,
   ]);
 
@@ -873,15 +877,21 @@ export const App = () => {
         throw new Error('YAML must include at least label or id.');
       }
 
+      const trimmedJd = jobDescription.trim();
       const saved = await importSavedVersion({
         ...parsed,
         extends: 'master',
         label: parsed.label || parsed.id,
+        ...(trimmedJd ? { jobDescription: trimmedJd } : {}),
       });
       setSelectedVersionId(saved.id);
       setOpenSection(null);
       setAiReply('');
-      setActionMessage(`Created saved CV "${saved.label}".`);
+      setActionMessage(
+        trimmedJd
+          ? `Created saved CV "${saved.label}" (job description stored).`
+          : `Created saved CV "${saved.label}".`,
+      );
     } catch (applyError) {
       const message = applyError instanceof Error
         ? applyError.message
@@ -926,13 +936,16 @@ export const App = () => {
     try {
       const nextLetter = coverLetterDraft.trim();
       const nextNote = personalNoteDraft.trim();
+      const nextJd = jobDescription.trim();
       const saved = await updateVersion({
         ...selectedVersion,
         coverLetter: nextLetter,
         personalNote: nextNote,
+        jobDescription: nextJd,
       });
       setCoverLetterDraft(saved.coverLetter ?? '');
       setPersonalNoteDraft(saved.personalNote ?? '');
+      setJobDescription(saved.jobDescription ?? '');
       setActionMessage(`Application text saved on "${saved.label}".`);
     } catch (saveError) {
       const message = saveError instanceof Error
@@ -1065,6 +1078,7 @@ export const App = () => {
       personalNoteDraft={personalNoteDraft}
       hasSavedLetter={Boolean(selectedVersion.coverLetter?.trim())}
       hasSavedPersonalNote={Boolean(selectedVersion.personalNote?.trim())}
+      hasSavedJobDescription={Boolean(selectedVersion.jobDescription?.trim())}
       hasApplicantBrief={Boolean(master.applicantBrief?.trim())}
       onJobDescriptionChange={setJobDescription}
       onLetterDraftChange={setCoverLetterDraft}

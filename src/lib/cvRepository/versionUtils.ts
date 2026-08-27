@@ -60,7 +60,8 @@ export function stripVersionForCopy(
     projectsSectionTitle: version.projectsSectionTitle,
     footerNote: version.footerNote,
     education: version.education,
-    // coverLetter is application-specific — do not copy onto Save copy / promote-to-base
+    // coverLetter, personalNote, and jobDescription are application-specific —
+    // do not copy onto Save copy / promote-to-base
   };
 }
 

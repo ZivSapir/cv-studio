@@ -61,9 +61,10 @@ Prompts instruct the model to **emphasize facts from your master CV only** — n
 
 On a **saved** CV, click **Cover letter**:
 
-1. Paste the job description, **Copy prompt** (uses master + this tailored CV)
-2. Paste the plain-text letter back, edit, **Save to this CV**
-3. **Copy letter** or **Print / PDF** when you need to attach it
+1. Job description loads automatically if it was stored when you tailored or last saved this CV (otherwise paste once)
+2. **Copy prompt** (uses master + this tailored CV + JD)
+3. Paste the plain-text letter back, edit, **Save to this CV** (also stores the JD for next time)
+4. **Copy letter** or **Print / PDF** when you need to attach it
 
 Optional on master YAML: `applicantBrief` — short voice / extra context included in the cover-letter prompt (not shown on the A4 CV).
 

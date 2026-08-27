@@ -101,6 +101,11 @@ export type CvVersion = {
   coverLetter?: string;
   /** Short personal note for email / LinkedIn / application form (not on the A4 CV). */
   personalNote?: string;
+  /**
+   * Job description for this saved application (not on the A4 CV).
+   * Prefills AI Tailor + Cover letter so you do not re-paste after reload.
+   */
+  jobDescription?: string;
 };
 
 export type PromoteToBaseTarget =

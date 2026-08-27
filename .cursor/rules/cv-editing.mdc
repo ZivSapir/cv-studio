@@ -70,6 +70,7 @@ alwaysApply: false
 
 ## Cover letters (optional, per saved version)
 - Store on the saved YAML as `coverLetter` (plain text). Omit when unused.
+- Optional `jobDescription` on the same saved YAML: the JD used for this application. Persist when creating/saving so Cover letter / AI Tailor can prefill without re-paste. Not shown on the A4 CV; strip on Save copy / promote-to-base (same as cover letter).
 - Match the JD and role type using master + that saved/resolved CV; invent nothing.
 - Do not list JD requirements you do not meet, compare yourself negatively to the posting, or apologize for fit — present matching strengths confidently; the reader decides alignment from truthful content only.
 - Shape: greeting → short open → exactly 4 labeled bullets → short close → `Sincerely,` + name.

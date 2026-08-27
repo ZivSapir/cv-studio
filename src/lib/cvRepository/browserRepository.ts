@@ -149,6 +149,10 @@ export function createBrowserRepository(): CvRepository {
         delete nextVersion.personalNote;
       }
 
+      if (!nextVersion.jobDescription?.trim()) {
+        delete nextVersion.jobDescription;
+      }
+
       const baseIndex = workspace.bases.findIndex((entry) => entry.id === version.id);
       if (baseIndex !== -1) {
         const bases = [...workspace.bases];
