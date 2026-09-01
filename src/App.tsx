@@ -52,7 +52,7 @@ import type { CvDataSource } from './lib/loadCvData';
 import { mergeCvVersion } from './lib/mergeCvVersion';
 import {
   buildCvPdfTitle,
-  cvPageOverflows,
+  measureCvPageFit,
 } from './lib/printCv';
 import type {
   CvLibrary,
@@ -64,7 +64,7 @@ import './AppShell.css';
 
 type AppMode = 'preview' | 'compare';
 
-const DEFAULT_VERSION_ID = 'main-cv';
+const DEFAULT_VERSION_ID = 'fullstack-cv';
 
 function getAllVersions(library: CvLibrary): CvVersion[] {
   return [...library.bases, ...library.saved];
@@ -124,7 +124,9 @@ export const App = () => {
     redo,
   } = useEditHistory();
   const [isSavingEdits, setIsSavingEdits] = useState(false);
-  const [overflowsPage, setOverflowsPage] = useState(false);
+  const [pageFit, setPageFit] = useState<{ status: 'overflow' | 'sparse'; sparePx: number } | null>(
+    null,
+  );
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -260,12 +262,26 @@ export const App = () => {
   useEffect(() => {
     const pageElement = pageRef.current;
     if (!pageElement || mode !== 'preview') {
-      setOverflowsPage(false);
+      setPageFit(null);
       return;
     }
 
+    let cancelled = false;
+
     const measureOverflow = () => {
-      setOverflowsPage(cvPageOverflows(pageElement));
+      if (cancelled) {
+        return;
+      }
+
+      const { overflows, sparePx } = measureCvPageFit(pageElement);
+
+      if (overflows) {
+        setPageFit({ status: 'overflow', sparePx });
+      } else if (sparePx > 75) {
+        setPageFit({ status: 'sparse', sparePx });
+      } else {
+        setPageFit(null);
+      }
     };
 
     measureOverflow();
@@ -274,7 +290,18 @@ export const App = () => {
     observer.observe(pageElement);
     window.addEventListener('resize', measureOverflow);
 
+    void document.fonts.ready.then(() => {
+      if (cancelled) {
+        return;
+      }
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(measureOverflow);
+      });
+    });
+
     return () => {
+      cancelled = true;
       observer.disconnect();
       window.removeEventListener('resize', measureOverflow);
     };
@@ -770,7 +797,7 @@ export const App = () => {
     const nextMaster = buildMasterFromOnboardingDraft(draft);
     await importMaster(nextMaster);
 
-    const mainBase = library?.bases.find((base) => base.id === 'main-cv')
+    const mainBase = library?.bases.find((base) => base.id === 'fullstack-cv' || base.id === 'main-cv')
       ?? library?.bases[0];
 
     if (mainBase) {
@@ -1376,12 +1403,22 @@ export const App = () => {
         </p>
       ) : null}
 
-      {overflowsPage && mode === 'preview' ? (
+      {pageFit?.status === 'overflow' && mode === 'preview' ? (
         <p
           className="app-warning"
           role="status"
         >
           Content overflows the page. Shorten the summary or bullets, or hide lower-priority items.
+        </p>
+      ) : null}
+
+      {pageFit?.status === 'sparse' && mode === 'preview' ? (
+        <p
+          className="app-info-banner"
+          role="status"
+        >
+          Page looks under-filled (~{Math.round(pageFit.sparePx)}px spare). Add back a relevant
+          bullet, project, or richer wording before sending this CV.
         </p>
       ) : null}
 

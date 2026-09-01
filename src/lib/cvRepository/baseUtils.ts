@@ -1,10 +1,12 @@
 import type { CvVersion } from '../../types/cv';
 
 const PREFERRED_COMPARE_BASE_IDS = [
-  'main-cv',
-  'general-cv',
-  'frontend-cv',
   'fullstack-cv',
+  'frontend-cv',
+  'mobile-cv',
+  'ai-engineer-cv',
+  'data-engineer-cv',
+  'main-cv',
 ] as const;
 
 export function resolveCompareBaseId(bases: CvVersion[]): string {
@@ -15,5 +17,5 @@ export function resolveCompareBaseId(bases: CvVersion[]): string {
     }
   }
 
-  return bases[0]?.id ?? 'main-cv';
+  return bases[0]?.id ?? 'fullstack-cv';
 }

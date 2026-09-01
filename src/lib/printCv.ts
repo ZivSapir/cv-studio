@@ -17,6 +17,18 @@ export type CvPageFitMeasurement = {
   sparePx: number;
 };
 
+function getContentBottom(pageElement: HTMLElement): number {
+  const pageTop = pageElement.getBoundingClientRect().top;
+
+  return Array.from(
+    pageElement.querySelectorAll('.cv-header, .cv-sidebar, .cv-main'),
+  ).reduce((maxBottom, element) => {
+    const bottom = element.getBoundingClientRect().bottom - pageTop;
+
+    return Math.max(maxBottom, bottom);
+  }, 0);
+}
+
 export function measureCvPageFit(pageElement: HTMLElement): CvPageFitMeasurement {
   const clientHeight = pageElement.clientHeight;
   const scrollHeight = pageElement.scrollHeight;
@@ -31,18 +43,15 @@ export function measureCvPageFit(pageElement: HTMLElement): CvPageFitMeasurement
     };
   }
 
-  const overflowPx = Math.max(0, scrollHeight - clientHeight - 1);
-  const sparePx = Math.max(0, clientHeight - scrollHeight);
+  const contentBottom = getContentBottom(pageElement);
+  const overflowPx = Math.max(0, contentBottom - clientHeight - 2);
+  const sparePx = Math.max(0, clientHeight - contentBottom);
 
   return {
     overflows: overflowPx > 0,
     clientHeight,
-    scrollHeight,
+    scrollHeight: contentBottom,
     overflowPx,
     sparePx,
   };
-}
-
-export function cvPageOverflows(pageElement: HTMLElement): boolean {
-  return measureCvPageFit(pageElement).overflows;
 }

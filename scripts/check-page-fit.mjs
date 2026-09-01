@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
- * Measure whether a CV version overflows one A4 page (same logic as in-app preview).
+ * Measure whether a CV version overflows one A4 page (PageFitApp / `?pageFit=` probe).
+ * In-app preview uses the same `measureCvPageFit` helper after fonts settle (see App.tsx).
  *
  * Usage: npm run check-page-fit -- <version-id>
  * Requires: dev server on CV_STUDIO_URL (default http://127.0.0.1:5173), or script will start one.
@@ -136,8 +137,24 @@ async function runCheck(baseUrl, id) {
       return 1;
     }
 
+    if (payload.sparePx < 55) {
+      console.error(
+        `TOO TIGHT: ${result.versionId} has only ~${Math.round(payload.sparePx)}px spare (target 55-75px). ` +
+          'Headless measurement under-reports vs the in-app preview by ~10-20px, so this risks real overflow. Shorten copy or hide a lower-priority bullet/project.',
+      );
+      return 1;
+    }
+
+    if (payload.sparePx > 75) {
+      console.error(
+        `TOO SPARSE: ${result.versionId} has ~${Math.round(payload.sparePx)}px spare (target 55-75px). ` +
+          'The page looks under-filled. Add back a relevant bullet, project, or richer (still honest) wording.',
+      );
+      return 3;
+    }
+
     console.error(
-      `OK: ${result.versionId} fits one A4 page (~${Math.round(payload.sparePx)}px spare).`,
+      `OK: ${result.versionId} fits one A4 page in the target band (~${Math.round(payload.sparePx)}px spare).`,
     );
     return 0;
   } finally {

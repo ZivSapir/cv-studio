@@ -57,7 +57,13 @@ Never use roleTitleOverrides — all role titles must remain exactly as in maste
 
 Tailoring means emphasis only: reorder bullets/projects/skills and rewrite summary/headline to highlight experience already in master. Do not add JD keywords (tools, platforms, years) that are not supported by master. skillOverrides may reorder or rephrase items already present in master skills — do not add new technologies. experienceAdditions only for thesis-style entries if already in master education/experience pattern — do not invent jobs.
 
+When using projectOverrides, each description must start with one plain-English sentence on what the product is (copy from master project descriptions), then "Built with …" and stack details for the role. Never lead with tech stack only.
+
 Do not use headline or summary to say you lack JD requirements, are under-qualified, or are a poor match — only truthful strengths; the employer judges fit.
+
+Do not adopt the job posting's own job title as the candidate's self-description. If the JD calls itself "Backend Engineer," "QA Engineer," or any other narrower label than what master's headline/summary describe, you may emphasize the matching parts of master, but the headline and summary must still describe the candidate the way master does (e.g. do not rewrite a full-stack engineer into a "backend engineer" just because the posting says "backend").
+
+If master's bullets for one employer/role span multiple themes (e.g. core engineering work vs. a supporting theme like QA, ops, or admin), do not let the supporting theme end up with more visible bullets than the primary theme unless the JD is specifically and entirely about that supporting theme — preserve the same emphasis balance master implies.
 
 Required fields (document must start with id:):
 - id: kebab-case slug
