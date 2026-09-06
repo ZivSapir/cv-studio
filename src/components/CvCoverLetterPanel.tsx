@@ -6,6 +6,7 @@ type CvCoverLetterPanelProps = {
   letterDraft: string;
   hasSavedLetter: boolean;
   hasApplicantBrief: boolean;
+  canSave: boolean;
   disabled?: boolean;
   personalNoteDraft: string;
   hasSavedPersonalNote: boolean;
@@ -31,6 +32,7 @@ export const CvCoverLetterPanel = ({
   hasSavedPersonalNote,
   hasSavedJobDescription,
   hasApplicantBrief,
+  canSave,
   disabled,
   onJobDescriptionChange,
   onLetterDraftChange,
@@ -62,9 +64,19 @@ export const CvCoverLetterPanel = ({
         </button>
       </div>
       <p className="app-ai-panel-copy">
-        Optional for this saved CV ({versionLabel}). If a job description is stored on this
-        CV, it loads here automatically. Copy a prompt to ChatGPT or Gemini, paste the letter
-        back, edit, then save. Nothing is sent to our servers.
+        {canSave ? (
+          <>
+            Optional for this saved CV ({versionLabel}). If a job description is stored on this
+            CV, it loads here automatically. Copy a prompt to ChatGPT or Gemini, paste the letter
+            back, edit, then save. Nothing is sent to our servers.
+          </>
+        ) : (
+          <>
+            Quick cover letter using {versionLabel} as the reference CV. This is not saved
+            anywhere — copy the letter or download the PDF before you switch CVs or close the
+            tab. Copy a prompt to ChatGPT or Gemini, then paste the letter back below.
+          </>
+        )}
         {hasApplicantBrief
           ? ' Your master applicantBrief is included in the prompt.'
           : null}
@@ -79,9 +91,11 @@ export const CvCoverLetterPanel = ({
           placeholder="Paste the job description here (saved with this CV)"
         />
         <span className="app-ai-field-hint">
-          {hasSavedJobDescription
-            ? 'Loaded from this saved CV. Shared with AI tailor; Save keeps it on this version.'
-            : 'Saved on this CV when you Save or Apply a tailored YAML. Shared with AI tailor.'}
+          {canSave
+            ? (hasSavedJobDescription
+              ? 'Loaded from this saved CV. Shared with AI tailor; Save keeps it on this version.'
+              : 'Saved on this CV when you Save or Apply a tailored YAML. Shared with AI tailor.')
+            : 'Not saved anywhere — this is scratch text for this session only.'}
         </span>
       </label>
       <div className="app-toolbar-actions app-toolbar-actions-inline">
@@ -105,24 +119,26 @@ export const CvCoverLetterPanel = ({
         />
       </label>
       <div className="app-toolbar-actions app-toolbar-actions-inline">
-        <button
-          type="button"
-          className="app-button"
-          disabled={
-            disabled
-            || (
-              !letterDraft.trim()
-              && !personalNoteDraft.trim()
-              && !jobDescription.trim()
-              && !hasSavedLetter
-              && !hasSavedPersonalNote
-              && !hasSavedJobDescription
-            )
-          }
-          onClick={() => void onSaveLetter()}
-        >
-          Save to this CV
-        </button>
+        {canSave ? (
+          <button
+            type="button"
+            className="app-button"
+            disabled={
+              disabled
+              || (
+                !letterDraft.trim()
+                && !personalNoteDraft.trim()
+                && !jobDescription.trim()
+                && !hasSavedLetter
+                && !hasSavedPersonalNote
+                && !hasSavedJobDescription
+              )
+            }
+            onClick={() => void onSaveLetter()}
+          >
+            Save to this CV
+          </button>
+        ) : null}
         <button
           type="button"
           className="app-button app-button-secondary"

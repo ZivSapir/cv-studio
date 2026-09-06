@@ -186,9 +186,6 @@ export const App = () => {
     if (selectedVersion?.kind === 'saved') {
       setJobDescription(selectedVersion.jobDescription ?? '');
     }
-    if (selectedVersion?.kind !== 'saved') {
-      setOpenSection((section) => (section === 'coverLetter' ? null : section));
-    }
   }, [
     selectedVersion?.id,
     selectedVersion?.coverLetter,
@@ -1047,13 +1044,13 @@ export const App = () => {
   };
 
   const handleClearCoverLetter = async () => {
-    if (!selectedVersion || selectedVersion.kind !== 'saved' || isEditing || isExampleMode) {
+    if (!selectedVersion || isEditing || isExampleMode) {
       return;
     }
 
     setCoverLetterDraft('');
 
-    if (!selectedVersion.coverLetter?.trim()) {
+    if (selectedVersion.kind !== 'saved' || !selectedVersion.coverLetter?.trim()) {
       return;
     }
 
@@ -1095,7 +1092,7 @@ export const App = () => {
     || library.bases.some((base) => base.id === selectedVersion.id);
 
   const toolsAvailable = !isExampleMode && !isEditing;
-  const coverLetterAvailable = isSavedSelected && toolsAvailable;
+  const coverLetterAvailable = toolsAvailable;
 
   const coverLetterSectionContent = coverLetterAvailable ? (
     <CvCoverLetterPanel
@@ -1107,6 +1104,7 @@ export const App = () => {
       hasSavedPersonalNote={Boolean(selectedVersion.personalNote?.trim())}
       hasSavedJobDescription={Boolean(selectedVersion.jobDescription?.trim())}
       hasApplicantBrief={Boolean(master.applicantBrief?.trim())}
+      canSave={isSavedSelected}
       onJobDescriptionChange={setJobDescription}
       onLetterDraftChange={setCoverLetterDraft}
       onPersonalNoteDraftChange={setPersonalNoteDraft}
@@ -1144,9 +1142,7 @@ export const App = () => {
             ? 'Exit Edit mode first'
             : isExampleMode
               ? 'Not available on the public template'
-              : isSavedSelected
-                ? undefined
-                : 'Save a copy of this CV first'
+              : undefined
         }
         aiTailorUnavailableHint={
           isEditing
