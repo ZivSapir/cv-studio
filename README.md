@@ -10,17 +10,28 @@ Local-first CV editor: one YAML source of truth, base profiles, job-tailored ver
 
 ## Two ways to use it
 
-### 1) Web (GitHub Pages) — no install
+Pick one depending on whether you already pay for an AI coding agent.
+
+| | Option 1: Web app | Option 2: Local + coding agent |
+|---|---|---|
+| Cost | Free, no account, no API key | Requires a coding agent with an active plan (e.g. Cursor, Claude Code) |
+| Install | None — open a URL | `git clone` + `npm install` (Node.js required) |
+| Tailoring a CV | You copy a prompt, paste it into ChatGPT/Gemini/Claude yourself, paste the reply back | You paste the job description straight to your agent in the editor; it edits the YAML files for you |
+| Data location | Your browser (IndexedDB) | Plain YAML files on your disk under `data/` |
+
+Either way you end up in the same CV Studio preview to review, compare, and export a PDF — this only changes how the tailoring step happens.
+
+### Option 1: Web app — no install, no API key
 
 Open the hosted site (after Pages is enabled): `https://zivsapir.github.io/cv-studio/`
 
 - Data is stored in **your browser** (IndexedDB)
 - Use **Export backup** regularly
-- **Tailor with AI**: copy a prompt into your ChatGPT/Gemini, paste the YAML reply back
+- **Tailor with AI**: copy a prompt into your ChatGPT/Gemini, paste the YAML reply back — see [Bring your own AI](#bring-your-own-ai) below for the exact steps
 - **Cover letter** (saved CVs only): optional BYO-AI letter per application; print to PDF
 - Nothing is uploaded to our servers
 
-### 2) Local developer mode
+### Option 2: Local + coding agent (Cursor / Claude Code / similar)
 
 ```bash
 git clone https://github.com/ZivSapir/cv-studio.git
@@ -47,25 +58,15 @@ Run `npm run backup` to write `data/backups/cv-studio-backup-latest.json` (full 
 
 In the UI, use **My CV** (not Public template) and **Export backup** for the same JSON while `npm run dev` is running.
 
-### Sharing this with someone else
+**Tailoring a CV with your agent:**
 
-This repo is public, so anyone can use local developer mode for their own CV without needing GitHub access to this project — no invite, no collaborator/co-owner permissions required. To set it up on their own Mac:
+1. Fill in your CV via the in-app onboarding wizard, or by hand-editing `data/master.yaml`.
+2. Open the `cv-studio` folder in Cursor or Claude Code (or another coding agent).
+3. Paste a job description into the agent's chat and ask it to tailor a CV for that role — no separate copy/paste of a prompt is needed, the agent edits the files directly.
+4. The agent follows [`.cursor/rules/cv-editing.mdc`](.cursor/rules/cv-editing.mdc) — generic honesty/tailoring rules, not specific to any one person — and writes a job-tailored version to `data/saved/`. (Cursor reads that file automatically; [`CLAUDE.md`](CLAUDE.md) points Claude Code at the same rules.)
+5. Back in the browser, click **Reload**, then open the new version to review, compare, and export the PDF.
 
-```bash
-git clone https://github.com/ZivSapir/cv-studio.git
-cd cv-studio
-npm install
-npm run setup
-npm run dev
-```
-
-Then, in Cursor or Claude Code (or any coding agent) opened on that folder:
-
-1. Fill in their own CV via the in-app onboarding wizard, or by hand-editing `data/master.yaml`.
-2. Paste a job description and ask the agent to tailor a CV for it — the agent follows [`.cursor/rules/cv-editing.mdc`](.cursor/rules/cv-editing.mdc) (generic, not specific to any one person) to build a job-tailored version under `data/saved/`.
-3. Open it in CV Studio's preview to review, compare, and export the PDF.
-
-Everything each person creates under `data/` is gitignored and stays local to their own machine — nothing gets pushed back into this shared repo unless someone deliberately commits it.
+**Sharing this with someone else:** this repo is public, so a friend can clone it and run the exact steps above for their own CV without you adding them as a GitHub collaborator — no invite or repo permissions needed, they just need their own Cursor/Claude Code (or similar) setup. Everything each person creates under `data/` is gitignored and stays local to their own machine — nothing gets pushed back into this shared repo unless someone deliberately commits it.
 
 ## Bring your own AI
 
@@ -101,16 +102,10 @@ Optional later: paste a free Gemini API key (BYOK) — not in Phase 1.
 | `data/bases/*.yaml` | **no** (local) | Your base profiles (any number) |
 | `data/saved/*.yaml` | **no** (local) | Your job-specific CVs |
 
-## Workflow (local)
-
-1. Run `npm run setup`, then edit `data/master.yaml`
-2. Pick a Base CV or saved version
-3. Reload / Edit / Compare / Download PDF
-
 ## Disclaimer
 
 CV Studio is provided **as-is**, without warranty (MIT License). You are responsible for the accuracy of your CV and for third-party AI tools you use. AI prompts are copied by you into ChatGPT/Gemini under their terms — this app does not call those APIs. Not affiliated with OpenAI, Google, Cursor, or any employer named in your files.
 
 ## Tailoring rules (for Cursor / Claude Code, local mode)
 
-See [`.cursor/rules/cv-editing.mdc`](.cursor/rules/cv-editing.mdc) (Cursor reads this automatically; [`CLAUDE.md`](CLAUDE.md) points Claude Code at the same file). The rules are generic — safe to reuse as-is by anyone who clones this repo. Optionally keep your own private, not-committed "knowledge base" file (background, metrics, a do-not-oversell list) outside `data/` and tell your agent where it lives; the rules file will use it alongside `data/master.yaml` when tailoring.
+The rules the agent follows ([`.cursor/rules/cv-editing.mdc`](.cursor/rules/cv-editing.mdc)) are generic — safe to reuse as-is by anyone who clones this repo. Optionally keep your own private, not-committed "knowledge base" file (background, metrics, a do-not-oversell list) outside `data/` and tell your agent where it lives; the rules file will use it alongside `data/master.yaml` when tailoring.
