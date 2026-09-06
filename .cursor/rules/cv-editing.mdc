@@ -91,7 +91,8 @@ alwaysApply: false
 - Optional `jobDescription` on the same saved YAML: the JD used for this application. Persist when creating/saving so Cover letter / AI Tailor can prefill without re-paste. Not shown on the A4 CV; strip on Save copy / promote-to-base (same as cover letter).
 - Match the JD and role type using master + that saved/resolved CV; invent nothing.
 - Do not list JD requirements you do not meet, compare yourself negatively to the posting, or apologize for fit — present matching strengths confidently; the reader decides alignment from truthful content only.
-- Shape: greeting → short open → exactly 4 labeled bullets → short close → `Sincerely,` + name.
+- Shape: greeting → short open → exactly 4 labeled bullets → close → `Sincerely,` + name.
+- **Close (required):** the last sentence before the sign-off is exactly `I'd love to be considered for this role.` Do not use `I'd welcome the chance`, `I would welcome the opportunity`, or any variant that offers to bring a mix of skills to the company.
 - **Apply opener:** prefer `I'd like to apply` / `I would like to apply` over `I'm applying` / `I am applying` (emails, cover letters, `personalNote`).
 - Hard length cap: no longer than a short half-page (~250–300 words), same scale as a typical one-page application letter.
 - Optional master `applicantBrief` for voice/extra context in BYO prompts (not on the A4 CV).

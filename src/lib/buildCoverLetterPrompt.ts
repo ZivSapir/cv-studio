@@ -98,8 +98,10 @@ Hard length cap: no longer than a short half-page letter (~250-300 words). Prefe
    • Quantitative Foundation: …
    • Data-Driven Insights: …
    (Choose labels that fit THIS role; do not copy these example labels.)
-4. One short closing paragraph — company-specific enthusiasm + what you would contribute
-5. Sign-off — Thank you… / Sincerely, / {candidate name from CV}
+4. Close with exactly this sentence and nothing else in that paragraph: I'd love to be considered for this role.
+5. Sign-off — Sincerely, / {candidate name from CV}
+
+Do not close with "I'd welcome the chance", "I would welcome the opportunity", or any variant that offers to bring a mix of skills to the company.
 
 Voice rules:
 - Formal, confident, concise
