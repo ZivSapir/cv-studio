@@ -47,6 +47,26 @@ Run `npm run backup` to write `data/backups/cv-studio-backup-latest.json` (full 
 
 In the UI, use **My CV** (not Public template) and **Export backup** for the same JSON while `npm run dev` is running.
 
+### Sharing this with someone else
+
+This repo is public, so anyone can use local developer mode for their own CV without needing GitHub access to this project — no invite, no collaborator/co-owner permissions required. To set it up on their own Mac:
+
+```bash
+git clone https://github.com/ZivSapir/cv-studio.git
+cd cv-studio
+npm install
+npm run setup
+npm run dev
+```
+
+Then, in Cursor or Claude Code (or any coding agent) opened on that folder:
+
+1. Fill in their own CV via the in-app onboarding wizard, or by hand-editing `data/master.yaml`.
+2. Paste a job description and ask the agent to tailor a CV for it — the agent follows [`.cursor/rules/cv-editing.mdc`](.cursor/rules/cv-editing.mdc) (generic, not specific to any one person) to build a job-tailored version under `data/saved/`.
+3. Open it in CV Studio's preview to review, compare, and export the PDF.
+
+Everything each person creates under `data/` is gitignored and stays local to their own machine — nothing gets pushed back into this shared repo unless someone deliberately commits it.
+
 ## Bring your own AI
 
 This app does **not** ship API keys or call OpenAI / Gemini / Claude for you.
@@ -91,6 +111,6 @@ Optional later: paste a free Gemini API key (BYOK) — not in Phase 1.
 
 CV Studio is provided **as-is**, without warranty (MIT License). You are responsible for the accuracy of your CV and for third-party AI tools you use. AI prompts are copied by you into ChatGPT/Gemini under their terms — this app does not call those APIs. Not affiliated with OpenAI, Google, Cursor, or any employer named in your files.
 
-## Tailoring rules (for Cursor, local mode)
+## Tailoring rules (for Cursor / Claude Code, local mode)
 
-See [`.cursor/rules/cv-editing.mdc`](.cursor/rules/cv-editing.mdc).
+See [`.cursor/rules/cv-editing.mdc`](.cursor/rules/cv-editing.mdc) (Cursor reads this automatically; [`CLAUDE.md`](CLAUDE.md) points Claude Code at the same file). The rules are generic — safe to reuse as-is by anyone who clones this repo. Optionally keep your own private, not-committed "knowledge base" file (background, metrics, a do-not-oversell list) outside `data/` and tell your agent where it lives; the rules file will use it alongside `data/master.yaml` when tailoring.
