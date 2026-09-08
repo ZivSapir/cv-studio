@@ -274,7 +274,7 @@ export const App = () => {
 
       if (overflows) {
         setPageFit({ status: 'overflow', sparePx });
-      } else if (sparePx > 75) {
+      } else if (sparePx > 100) {
         setPageFit({ status: 'sparse', sparePx });
       } else {
         setPageFit(null);
