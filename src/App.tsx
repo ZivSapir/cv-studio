@@ -198,9 +198,9 @@ export const App = () => {
   useEffect(() => {
     setCoverLetterDraft(selectedVersion?.coverLetter ?? '');
     setPersonalNoteDraft(selectedVersion?.personalNote ?? '');
-    if (selectedVersion?.kind === 'saved') {
-      setJobDescription(selectedVersion.jobDescription ?? '');
-    }
+    setJobDescription(
+      selectedVersion?.kind === 'saved' ? selectedVersion.jobDescription ?? '' : '',
+    );
   }, [
     selectedVersion?.id,
     selectedVersion?.coverLetter,
@@ -1718,7 +1718,10 @@ export const App = () => {
               },
             } : undefined}
         />
-        <CoverLetterDocument text={coverLetterDraft} />
+        <CoverLetterDocument
+          text={coverLetterDraft}
+          cv={resolvedCv}
+        />
       </div>
 
       {mode === 'compare' && !isEditing ? (

@@ -2,16 +2,6 @@
   display: none;
 }
 
-.cover-letter-body {
-  margin: 0;
-  font-family: Georgia, 'Times New Roman', serif;
-  font-size: 11.5pt;
-  line-height: 1.45;
-  color: #102a43;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-}
-
 @media print {
   body.app-print-cover-letter .cv-page,
   body.app-print-cover-letter .cv-page * {
@@ -31,8 +21,73 @@
     width: 210mm;
     min-height: 297mm;
     margin: 0;
-    padding: 22mm 20mm;
+    padding: 24mm 26mm;
     box-sizing: border-box;
     background: #ffffff;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 12.5pt;
+    line-height: 1.55;
+    color: #1a1a1a;
+  }
+
+  body.app-print-cover-letter .cover-letter-header {
+    text-align: left;
+  }
+
+  body.app-print-cover-letter .cover-letter-name {
+    font-size: 19pt;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+  }
+
+  body.app-print-cover-letter .cover-letter-contact {
+    margin-top: 4px;
+    font-size: 10pt;
+    color: #444444;
+    font-family: Helvetica, Arial, sans-serif;
+  }
+
+  body.app-print-cover-letter .cover-letter-contact a {
+    color: #444444;
+    text-decoration: none;
+  }
+
+  body.app-print-cover-letter .cover-letter-rule {
+    border: none;
+    border-top: 1px solid #cccccc;
+    margin: 18px 0 22px;
+  }
+
+  body.app-print-cover-letter .cover-letter-date {
+    font-size: 10.5pt;
+    color: #555555;
+    margin-bottom: 18px;
+    font-family: Helvetica, Arial, sans-serif;
+  }
+
+  body.app-print-cover-letter .cover-letter-page p {
+    margin: 0 0 14px;
+  }
+
+  body.app-print-cover-letter .cover-letter-bullets {
+    margin: 0 0 16px;
+    padding-left: 22px;
+  }
+
+  body.app-print-cover-letter .cover-letter-bullets li {
+    margin-bottom: 9px;
+  }
+
+  body.app-print-cover-letter .cover-letter-signoff {
+    margin-top: 4px;
+  }
+
+  body.app-print-cover-letter .cover-letter-signoff-label {
+    margin-bottom: 0 !important;
+  }
+
+  body.app-print-cover-letter .cover-letter-signoff-name {
+    margin-top: 2px !important;
+    font-weight: 700;
   }
 }
