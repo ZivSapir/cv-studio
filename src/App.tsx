@@ -63,6 +63,7 @@ import {
   generateTailoredCv,
   refineTailoredCv,
 } from './lib/gemini/generateTailoredCv';
+import { generateCoverLetterWithGemini } from './lib/gemini/generateCoverLetter';
 import { formatGeminiError } from './lib/gemini/geminiUtils';
 import type {
   CvLibrary,
@@ -126,6 +127,7 @@ export const App = () => {
   const [isGeneratingWithGemini, setIsGeneratingWithGemini] = useState(false);
   const [geminiRefineInstruction, setGeminiRefineInstruction] = useState('');
   const [isRefiningWithGemini, setIsRefiningWithGemini] = useState(false);
+  const [isGeneratingCoverLetterWithGemini, setIsGeneratingCoverLetterWithGemini] = useState(false);
   const {
     draftVersion,
     canUndo,
@@ -1062,6 +1064,41 @@ export const App = () => {
     }
   };
 
+  const handleGenerateCoverLetterWithGemini = async () => {
+    if (
+      !master
+      || !resolvedCv
+      || !jobDescription.trim()
+      || isEditing
+      || isExampleMode
+      || isGeneratingCoverLetterWithGemini
+    ) {
+      return;
+    }
+
+    setActionError(null);
+    setIsGeneratingCoverLetterWithGemini(true);
+
+    try {
+      const prompt = buildCoverLetterPrompt({
+        master,
+        resolvedCv,
+        jobDescription,
+        versionLabel: selectedVersion?.label,
+      });
+      const letter = await generateCoverLetterWithGemini({
+        apiKey: geminiApiKey,
+        prompt,
+      });
+      setCoverLetterDraft(letter);
+      setActionMessage('Generated cover letter with Gemini.');
+    } catch (generateError) {
+      setActionError(formatGeminiError(generateError));
+    } finally {
+      setIsGeneratingCoverLetterWithGemini(false);
+    }
+  };
+
   const handleSaveCoverLetter = async () => {
     if (!selectedVersion || selectedVersion.kind !== 'saved' || isEditing || isExampleMode) {
       return;
@@ -1227,6 +1264,10 @@ export const App = () => {
       onPrintLetter={handlePrintCoverLetter}
       onClearLetter={handleClearCoverLetter}
       onClose={() => setOpenSection(null)}
+      hasGeminiKey={Boolean(geminiApiKey)}
+      isGenerating={isGeneratingCoverLetterWithGemini}
+      onOpenGeminiKeySettings={() => setShowGeminiKeyModal(true)}
+      onGenerateWithGemini={handleGenerateCoverLetterWithGemini}
     />
   ) : null;
 
