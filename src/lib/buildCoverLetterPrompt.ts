@@ -86,7 +86,12 @@ ${tailoredYaml}
 \`\`\`
 ${briefBlock}
 ## Task
-Return ONLY the cover letter as plain text. Do not wrap it in markdown fences. Do not invent employers, titles, skills, metrics, tools, or years of experience that are not in the CV (or applicant brief). Job titles in the letter must match the CV exactly.
+Return ONLY the cover letter as plain text. Do not wrap it in markdown fences, and do not use any
+markdown syntax anywhere in the letter itself: no **bold**, no _italics_, no # headers, no
+asterisk (*) bullets. This is printed as plain text verbatim, so markdown markers would show up
+as literal asterisks on the page. Do not invent employers, titles, skills, metrics, tools, or
+years of experience that are not in the CV (or applicant brief). Job titles in the letter must
+match the CV exactly.
 
 Match this job description and role type by emphasizing real evidence from the CV — different jobs, different emphasis, same facts.
 
@@ -94,10 +99,12 @@ Hard length cap: no longer than a short half-page letter (~250-300 words). Prefe
 
 1. Greeting — Dear {Company} Team, (or hiring manager if named in the JD)
 2. One short opening paragraph — role, company interest, one honest bridge from background
-3. Exactly four short labeled bullets mapping JD themes to real CV evidence, e.g.
-   • Quantitative Foundation: …
-   • Data-Driven Insights: …
-   (Choose labels that fit THIS role; do not copy these example labels.)
+3. Exactly four short labeled bullets mapping JD themes to real CV evidence, each starting with a
+   plain hyphen and a space, e.g.
+   - Quantitative Foundation: …
+   - Data-Driven Insights: …
+   (Choose labels that fit THIS role; do not copy these example labels. Do not bold the labels -
+   plain text only.)
 4. Close with exactly this sentence and nothing else in that paragraph: I'd love to be considered for this role.
 5. Sign-off — Sincerely, / {candidate name from CV}
 
@@ -106,6 +113,7 @@ Do not close with "I'd welcome the chance", "I would welcome the opportunity", o
 Voice rules:
 - Formal, confident, concise
 - No em dashes; use a hyphen (-), comma, or colon
+- No markdown formatting of any kind (no **bold**, no bullet asterisks) - plain text only
 - If the JD requires something missing from the CV, omit it or frame an honest adjacent strength — never invent it, and never tell the reader you do not meet their requirements (no gap lists, no "upfront", no apologizing for fit; they judge from truthful evidence only)
 - Do not claim business forecasting, FP&A, cloud certifications, or tools unless they appear in the CV/brief
 - For this candidate: do not oversell SQL at Wix (familiar, few queries). Project SQL may be mentioned when relevant if framed as AI-assisted development, not solo expert SQL experience
