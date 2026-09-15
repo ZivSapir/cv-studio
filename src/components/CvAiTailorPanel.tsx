@@ -154,13 +154,15 @@ export const CvAiTailorPanel = ({
                 Add Gemini key
               </button>
             )}
-            <button
-              type="button"
-              className="app-button app-button-secondary"
-              onClick={onOpenGeminiKeySettings}
-            >
-              {hasGeminiKey ? 'Manage key' : 'Have a key already?'}
-            </button>
+            {hasGeminiKey ? (
+              <button
+                type="button"
+                className="app-button app-button-secondary"
+                onClick={onOpenGeminiKeySettings}
+              >
+                Manage key
+              </button>
+            ) : null}
           </div>
 
           {canRefine ? (
