@@ -1,4 +1,5 @@
-import { TbX } from 'react-icons/tb';
+import { useState } from 'react';
+import { TbKey, TbX } from 'react-icons/tb';
 
 type CvCoverLetterPanelProps = {
   versionLabel: string;
@@ -21,7 +22,13 @@ type CvCoverLetterPanelProps = {
   onPrintLetter: () => void;
   onClearLetter: () => Promise<void>;
   onClose: () => void;
+  hasGeminiKey: boolean;
+  isGenerating: boolean;
+  onOpenGeminiKeySettings: () => void;
+  onGenerateWithGemini: () => Promise<void>;
 };
+
+type LetterTab = 'copy' | 'gemini';
 
 export const CvCoverLetterPanel = ({
   versionLabel,
@@ -44,7 +51,13 @@ export const CvCoverLetterPanel = ({
   onPrintLetter,
   onClearLetter,
   onClose,
+  hasGeminiKey,
+  isGenerating,
+  onOpenGeminiKeySettings,
+  onGenerateWithGemini,
 }: CvCoverLetterPanelProps) => {
+  const [tab, setTab] = useState<LetterTab>('copy');
+
   return (
     <section className="app-ai-panel">
       <div className="app-ai-panel-header">
@@ -63,20 +76,41 @@ export const CvCoverLetterPanel = ({
           Close
         </button>
       </div>
+
+      <div className="app-segmented">
+        <button
+          type="button"
+          className={tab === 'copy' ? 'app-segment app-segment-active' : 'app-segment'}
+          onClick={() => setTab('copy')}
+        >
+          Copy prompt
+        </button>
+        <button
+          type="button"
+          className={tab === 'gemini' ? 'app-segment app-segment-active' : 'app-segment'}
+          onClick={() => setTab('gemini')}
+        >
+          Generate with Gemini
+        </button>
+      </div>
+
       <p className="app-ai-panel-copy">
         {canSave ? (
           <>
             Optional for this saved CV ({versionLabel}). If a job description is stored on this
-            CV, it loads here automatically. Copy a prompt to ChatGPT or Gemini, paste the letter
-            back, edit, then save. Nothing is sent to our servers.
+            CV, it loads here automatically.
           </>
         ) : (
           <>
             Quick cover letter using {versionLabel} as the reference CV. This is not saved
             anywhere — copy the letter or download the PDF before you switch CVs or close the
-            tab. Copy a prompt to ChatGPT or Gemini, then paste the letter back below.
+            tab.
           </>
         )}
+        {' '}
+        {tab === 'copy'
+          ? 'Copy a prompt to ChatGPT or Gemini, then paste the letter back below. Nothing is sent to our servers.'
+          : 'Generates the letter directly from your Gemini API key — no copy/paste. Your key is stored only in this browser and sent straight to Google.'}
         {hasApplicantBrief
           ? ' Your master applicantBrief is included in the prompt.'
           : null}
@@ -98,16 +132,47 @@ export const CvCoverLetterPanel = ({
             : 'Not saved anywhere — this is scratch text for this session only.'}
         </span>
       </label>
-      <div className="app-toolbar-actions app-toolbar-actions-inline">
-        <button
-          type="button"
-          className="app-button"
-          disabled={disabled || !jobDescription.trim()}
-          onClick={() => void onCopyPrompt()}
-        >
-          Copy prompt
-        </button>
-      </div>
+      {tab === 'copy' ? (
+        <div className="app-toolbar-actions app-toolbar-actions-inline">
+          <button
+            type="button"
+            className="app-button"
+            disabled={disabled || !jobDescription.trim()}
+            onClick={() => void onCopyPrompt()}
+          >
+            Copy prompt
+          </button>
+        </div>
+      ) : (
+        <div className="app-toolbar-actions app-toolbar-actions-inline">
+          {hasGeminiKey ? (
+            <button
+              type="button"
+              className="app-button"
+              disabled={disabled || !jobDescription.trim() || isGenerating}
+              onClick={() => void onGenerateWithGemini()}
+            >
+              {isGenerating ? 'Generating…' : 'Generate with Gemini'}
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="app-button"
+              onClick={onOpenGeminiKeySettings}
+            >
+              <TbKey aria-hidden />
+              Add Gemini key
+            </button>
+          )}
+          <button
+            type="button"
+            className="app-button app-button-secondary"
+            onClick={onOpenGeminiKeySettings}
+          >
+            {hasGeminiKey ? 'Manage key' : 'Have a key already?'}
+          </button>
+        </div>
+      )}
       <label className="app-ai-field">
         <span>Cover letter</span>
         <textarea
