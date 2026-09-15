@@ -2,6 +2,7 @@ import { load as parseYaml } from 'js-yaml';
 import masterExampleRaw from '../../data/master.example.yaml?raw';
 import type { CvMaster } from '../types/cv';
 import { formatAiYamlParseError } from './buildTailorPrompt';
+import { validateCvMaster } from './cvValidation';
 
 function extractRawYaml(raw: string): string {
   const trimmed = raw.trim();
@@ -106,41 +107,18 @@ Rules:
 Return the master YAML now.`;
 }
 
-function assertCvMaster(value: unknown): asserts value is CvMaster {
-  if (!value || typeof value !== 'object') {
-    throw new Error('AI reply is not a YAML object.');
-  }
-
-  const master = value as Partial<CvMaster>;
-
-  if (!master.name?.trim()) {
-    throw new Error('Master YAML must include name.');
-  }
-
-  if (!master.headline?.trim()) {
-    throw new Error('Master YAML must include headline.');
-  }
-
-  if (!master.summary?.trim()) {
-    throw new Error('Master YAML must include summary.');
-  }
-
-  if (!master.contact?.email?.trim()) {
-    throw new Error('Master YAML must include contact.email.');
-  }
-
-  if (!Array.isArray(master.experience) || master.experience.length === 0) {
-    throw new Error('Master YAML must include at least one experience entry.');
-  }
-}
-
 export function parseAiMasterYaml(raw: string): CvMaster {
   const yamlText = normalizeAiMasterYaml(raw);
 
   try {
     const parsed = parseYaml(yamlText);
-    assertCvMaster(parsed);
-    return parsed;
+    const master = validateCvMaster(parsed);
+
+    if (master.experience.length === 0) {
+      throw new Error('Master YAML must include at least one experience entry.');
+    }
+
+    return master;
   } catch (parseError) {
     throw new Error(formatAiYamlParseError(parseError, yamlText));
   }

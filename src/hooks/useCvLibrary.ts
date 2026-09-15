@@ -5,6 +5,7 @@ import {
   type CvBackup,
   type CvBackendKind,
 } from '../lib/cvRepository';
+import { onWorkspaceChangedElsewhere } from '../lib/cvRepository/browserStore';
 import type { CvDataSource } from '../lib/loadCvData';
 import type {
   CvLibrary,
@@ -19,6 +20,7 @@ type UseCvLibraryResult = {
   master: CvMaster | null;
   isLoading: boolean;
   error: string | null;
+  hasExternalChange: boolean;
   reloadLibrary: () => Promise<void>;
   saveCopy: (
     label: string,
@@ -44,6 +46,7 @@ export function useCvLibrary(source: CvDataSource): UseCvLibraryResult {
   const [master, setMaster] = useState<CvMaster | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasExternalChange, setHasExternalChange] = useState(false);
 
   const reloadLibrary = useCallback(async () => {
     setIsLoading(true);
@@ -58,6 +61,7 @@ export function useCvLibrary(source: CvDataSource): UseCvLibraryResult {
       ]);
       setLibrary(nextLibrary);
       setMaster(nextMaster);
+      setHasExternalChange(false);
     } catch (loadError) {
       const message = loadError instanceof Error
         ? loadError.message
@@ -75,6 +79,11 @@ export function useCvLibrary(source: CvDataSource): UseCvLibraryResult {
   useEffect(() => {
     void getCvBackendKind().then(setBackendKind);
   }, []);
+
+  useEffect(
+    () => onWorkspaceChangedElsewhere(() => setHasExternalChange(true)),
+    [],
+  );
 
   const saveCopy = useCallback(async (
     label: string,
@@ -146,6 +155,7 @@ export function useCvLibrary(source: CvDataSource): UseCvLibraryResult {
     master,
     isLoading,
     error,
+    hasExternalChange,
     reloadLibrary,
     saveCopy,
     updateVersion,

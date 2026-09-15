@@ -60,6 +60,31 @@ type CvVersionFile = {
 const DATA_DIR = path.resolve(process.cwd(), 'data');
 const BASES_DIR = path.join(DATA_DIR, 'bases');
 const SAVED_DIR = path.join(DATA_DIR, 'saved');
+const VALID_ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+function isValidId(id: string): boolean {
+  return VALID_ID_PATTERN.test(id);
+}
+
+/**
+ * Resolves an id-derived filename inside `dir` and verifies the result is still
+ * within `dir` — a defense-in-depth check on top of `isValidId`, since ids come
+ * straight from the URL path.
+ */
+function resolveSafeFilePath(dir: string, id: string): string | null {
+  if (!isValidId(id)) {
+    return null;
+  }
+
+  const resolved = path.resolve(dir, `${id}.yaml`);
+  const relative = path.relative(dir, resolved);
+
+  if (relative.startsWith('..') || path.isAbsolute(relative)) {
+    return null;
+  }
+
+  return resolved;
+}
 const DEFAULT_COMPARE_BASE_ID = 'main-cv';
 const PREFERRED_COMPARE_BASE_IDS = [
   'main-cv',
@@ -239,7 +264,13 @@ async function findLocalVersion(sourceId: string): Promise<CvVersionFile | undef
 }
 
 function getBaseFilePath(id: string): string {
-  return path.join(BASES_DIR, `${id}.yaml`);
+  const safePath = resolveSafeFilePath(BASES_DIR, id);
+
+  if (!safePath) {
+    throw new Error(`Invalid CV id: ${id}`);
+  }
+
+  return safePath;
 }
 
 function sendJson(
@@ -287,29 +318,39 @@ function stripVersionMeta(version: CvVersionFile): Omit<CvVersionFile, 'id' | 'l
 async function resolveLocalVersionPath(
   id: string,
 ): Promise<{ filePath: string; kind: 'base' | 'saved' } | null> {
-  const basePath = getBaseFilePath(id);
-
-  try {
-    await fs.access(basePath);
-    return {
-      filePath: basePath,
-      kind: 'base',
-    };
-  } catch {
-    // not a base file
-  }
-
-  const savedPath = path.join(SAVED_DIR, `${id}.yaml`);
-
-  try {
-    await fs.access(savedPath);
-    return {
-      filePath: savedPath,
-      kind: 'saved',
-    };
-  } catch {
+  if (!isValidId(id)) {
     return null;
   }
+
+  const basePath = resolveSafeFilePath(BASES_DIR, id);
+
+  if (basePath) {
+    try {
+      await fs.access(basePath);
+      return {
+        filePath: basePath,
+        kind: 'base',
+      };
+    } catch {
+      // not a base file
+    }
+  }
+
+  const savedPath = resolveSafeFilePath(SAVED_DIR, id);
+
+  if (savedPath) {
+    try {
+      await fs.access(savedPath);
+      return {
+        filePath: savedPath,
+        kind: 'saved',
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  return null;
 }
 
 async function uniqueSavedPath(id: string): Promise<string> {
@@ -335,6 +376,28 @@ export function cvApiPlugin(): Plugin {
         if (!req.url?.startsWith('/api/cv')) {
           next();
           return;
+        }
+
+        // Browsers attach Origin on every non-GET/HEAD fetch, same-origin or not.
+        // Reject anything that doesn't match this dev server so a malicious page
+        // open in another tab can't drive our file-writing endpoints (CSRF).
+        const isMutating = req.method !== 'GET' && req.method !== 'HEAD';
+        const origin = req.headers.origin;
+
+        if (isMutating && typeof origin === 'string') {
+          const host = req.headers.host;
+          let originHost: string | null = null;
+
+          try {
+            originHost = new URL(origin).host;
+          } catch {
+            originHost = null;
+          }
+
+          if (!host || originHost !== host) {
+            sendJson(res, 403, { error: 'Cross-origin request blocked.' });
+            return;
+          }
         }
 
         try {
@@ -594,7 +657,12 @@ export function cvApiPlugin(): Plugin {
               return;
             }
 
-            const filePath = path.join(SAVED_DIR, `${id}.yaml`);
+            const filePath = resolveSafeFilePath(SAVED_DIR, id);
+
+            if (!filePath) {
+              sendJson(res, 400, { error: 'Invalid saved CV id.' });
+              return;
+            }
 
             try {
               await fs.unlink(filePath);
