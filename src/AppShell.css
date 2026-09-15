@@ -714,6 +714,10 @@ body {
   align-items: center;
 }
 
+.app-toolbar-actions-gemini {
+  margin-bottom: 16px;
+}
+
 .app-file-button {
   display: inline-flex;
   align-items: center;

@@ -144,7 +144,7 @@ export const CvCoverLetterPanel = ({
           </button>
         </div>
       ) : (
-        <div className="app-toolbar-actions app-toolbar-actions-inline">
+        <div className="app-toolbar-actions app-toolbar-actions-inline app-toolbar-actions-gemini">
           {hasGeminiKey ? (
             <button
               type="button"

@@ -27,7 +27,8 @@ export const CvSiteFooter = ({
           </li>
           <li>
             <strong>Bring your own AI</strong> — copy a structured prompt to ChatGPT or
-            Gemini; paste the YAML reply back. No API keys or LLM calls from this app.
+            Gemini and paste the reply back, or optionally paste your own Gemini API key to
+            generate directly. Either way, nothing goes through this app&apos;s servers.
           </li>
           <li>
             <strong>A4-first</strong> — live preview and edit with one-page layout in mind.

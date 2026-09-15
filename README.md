@@ -16,7 +16,7 @@ Pick one depending on whether you already pay for an AI coding agent.
 |---|---|---|
 | Cost | Free, no account, no API key | Requires a coding agent with an active plan (e.g. Cursor, Claude Code) |
 | Install | None — open a URL | `git clone` + `npm install` (Node.js required) |
-| Tailoring a CV | You copy a prompt, paste it into ChatGPT/Gemini/Claude yourself, paste the reply back | You paste the job description straight to your agent in the editor; it edits the YAML files for you |
+| Tailoring a CV | Copy a prompt into ChatGPT/Gemini/Claude yourself and paste the reply back, or generate directly with your own Gemini API key (optional) | You paste the job description straight to your agent in the editor; it edits the YAML files for you |
 | Data location | Your browser (IndexedDB) | Plain YAML files on your disk under `data/` |
 
 Either way you end up in the same CV Studio preview to review, compare, and export a PDF — this only changes how the tailoring step happens.
@@ -27,7 +27,7 @@ Open the hosted site (after Pages is enabled): `https://zivsapir.github.io/cv-st
 
 - Data is stored in **your browser** (IndexedDB)
 - Use **Export backup** regularly
-- **Tailor with AI**: copy a prompt into your ChatGPT/Gemini, paste the YAML reply back — see [Bring your own AI](#bring-your-own-ai) below for the exact steps
+- **Tailor with AI**: copy a prompt into your ChatGPT/Gemini and paste the reply back, or paste your own Gemini API key to generate directly — see [Bring your own AI](#bring-your-own-ai) below for the exact steps
 - **Cover letter** (saved CVs only): optional BYO-AI letter per application; print to PDF
 - Nothing is uploaded to our servers
 
@@ -70,11 +70,21 @@ In the UI, use **My CV** (not Public template) and **Export backup** for the sam
 
 ## Bring your own AI
 
-This app does **not** ship API keys or call OpenAI / Gemini / Claude for you.
+This app does **not** ship API keys or call OpenAI / Gemini / Claude for you by default. Pick either path, per CV — both are available in the same **Tailor with AI** panel:
+
+**Copy/paste (any model, no key needed):**
 
 1. Click **Tailor with AI**, paste a job description, **Copy prompt**
-2. Paste into ChatGPT or Gemini in your browser
+2. Paste into ChatGPT, Gemini, Claude, or any AI chat you already use
 3. Paste the YAML reply back and **Apply as saved CV**
+
+**Direct with your own Gemini key (optional):**
+
+1. Switch to the **Generate with Gemini** tab and click **Add Gemini key** — paste a free key from [aistudio.google.com/apikey](https://aistudio.google.com/apikey)
+2. Paste a job description and click **Generate with Gemini** — no copy/paste round trip
+3. Use **Request a change** to ask for follow-up edits (e.g. "shorten the summary")
+
+Your key is stored only in your browser (localStorage) and sent straight to Google when you generate — never through this app's servers, in either the web app or local dev mode, since the Gemini call is entirely client-side.
 
 Prompts instruct the model to **emphasize facts from your master CV only** — not to invent skills or rename job titles. You are responsible for reviewing before you apply.
 
@@ -83,13 +93,11 @@ Prompts instruct the model to **emphasize facts from your master CV only** — n
 On a **saved** CV, click **Cover letter**:
 
 1. Job description loads automatically if it was stored when you tailored or last saved this CV (otherwise paste once)
-2. **Copy prompt** (uses master + this tailored CV + JD)
-3. Paste the plain-text letter back, edit, **Save to this CV** (also stores the JD for next time)
+2. **Copy prompt** (uses master + this tailored CV + JD) and paste into any AI chat — or switch to **Generate with Gemini** to skip the copy/paste, using the same key as above
+3. Edit the result, **Save to this CV** (also stores the JD for next time)
 4. **Copy letter** or **Print / PDF** when you need to attach it
 
 Optional on master YAML: `applicantBrief` — short voice / extra context included in the cover-letter prompt (not shown on the A4 CV).
-
-Optional later: paste a free Gemini API key (BYOK) — not in Phase 1.
 
 ## Repository layout
 
@@ -104,7 +112,7 @@ Optional later: paste a free Gemini API key (BYOK) — not in Phase 1.
 
 ## Disclaimer
 
-CV Studio is provided **as-is**, without warranty (MIT License). You are responsible for the accuracy of your CV and for third-party AI tools you use. AI prompts are copied by you into ChatGPT/Gemini under their terms — this app does not call those APIs. Not affiliated with OpenAI, Google, Cursor, or any employer named in your files.
+CV Studio is provided **as-is**, without warranty (MIT License). You are responsible for the accuracy of your CV and for third-party AI tools you use. AI prompts are either copied by you into ChatGPT/Gemini under their terms, or — if you opt into the Gemini BYOK option — sent directly from your browser to Google's API using your own key; either way, nothing goes through this app's servers. Not affiliated with OpenAI, Google, Cursor, or any employer named in your files.
 
 ## Tailoring rules (for Cursor / Claude Code, local mode)
 
