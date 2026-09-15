@@ -31,10 +31,10 @@ import {
   parseAiTailorYaml,
 } from './lib/buildTailorPrompt';
 import { buildMasterFromOnboardingDraft } from './lib/onboarding/buildMasterFromDraft';
+import { validateCvBackup, validateCvMaster, validateCvVersionSafeFields } from './lib/cvValidation';
 import type { OnboardingDraft } from './lib/onboarding/types';
 import { isPlaceholderMaster } from './lib/isPlaceholderMaster';
 import { compareResolvedCvs } from './lib/compareCv';
-import type { CvBackup } from './lib/cvRepository';
 import {
   listHiddenBullets,
   listHiddenProjects,
@@ -67,7 +67,6 @@ import { generateCoverLetterWithGemini } from './lib/gemini/generateCoverLetter'
 import { formatGeminiError } from './lib/gemini/geminiUtils';
 import type {
   CvLibrary,
-  CvMaster,
   CvVersion,
   ResolvedCv,
 } from './types/cv';
@@ -97,6 +96,7 @@ export const App = () => {
     master,
     isLoading,
     error,
+    hasExternalChange,
     reloadLibrary,
     saveCopy,
     updateVersion,
@@ -729,7 +729,7 @@ export const App = () => {
 
     try {
       const text = await file.text();
-      const backup = JSON.parse(text) as CvBackup;
+      const backup = validateCvBackup(JSON.parse(text));
       const confirmed = window.confirm(
         'Replace all local CV data in this browser/workspace with the backup?',
       );
@@ -756,7 +756,7 @@ export const App = () => {
 
     try {
       const text = await file.text();
-      const nextMaster = parseYaml(text) as CvMaster;
+      const nextMaster = validateCvMaster(parseYaml(text));
       const confirmed = window.confirm(
         'Replace your master CV with this YAML file?',
       );
@@ -913,11 +913,7 @@ export const App = () => {
     setActionError(null);
 
     try {
-      const parsed = parseAiTailorYaml(aiReply) as CvVersion;
-
-      if (!parsed || typeof parsed !== 'object') {
-        throw new Error('AI reply is not a YAML object.');
-      }
+      const parsed = validateCvVersionSafeFields(parseAiTailorYaml(aiReply)) as CvVersion;
 
       if (!parsed.label && !parsed.id) {
         throw new Error('YAML must include at least label or id.');
@@ -1539,6 +1535,23 @@ export const App = () => {
           role="status"
         >
           Web mode: your CV data stays in this browser only. Use Export backup so you do not lose it.
+        </p>
+      ) : null}
+
+      {hasExternalChange ? (
+        <p
+          className="app-warning"
+          role="status"
+        >
+          CV data changed in another tab. Reload to see the latest — saving here first may
+          overwrite it.{' '}
+          <button
+            type="button"
+            className="app-button app-button-secondary app-button-small"
+            onClick={() => void reloadLibrary()}
+          >
+            Reload
+          </button>
         </p>
       ) : null}
 

@@ -1,10 +1,49 @@
 import type { BrowserWorkspace } from './seedMigration';
 
-const DB_NAME = 'cv-studio';
+export const DB_NAME = 'cv-studio';
 const DB_VERSION = 1;
 const STORE_NAME = 'workspace';
+const SYNC_CHANNEL_NAME = 'cv-studio-workspace-sync';
 
 type WorkspaceRecord = BrowserWorkspace;
+
+// Distinguishes "this tab wrote" from "another tab wrote" on the sync channel below, so a tab
+// doesn't warn itself about its own write.
+const tabId = Math.random().toString(36).slice(2);
+
+function openSyncChannel(): BroadcastChannel | null {
+  if (typeof BroadcastChannel === 'undefined') {
+    return null;
+  }
+
+  try {
+    return new BroadcastChannel(SYNC_CHANNEL_NAME);
+  } catch {
+    return null;
+  }
+}
+
+const syncChannel = openSyncChannel();
+
+/**
+ * Notifies `onChange` when the IndexedDB workspace is written from another tab/window — the
+ * read-modify-write pattern here isn't transactional across tabs, so two tabs saving around the
+ * same time can silently clobber each other without a heads-up like this.
+ */
+export function onWorkspaceChangedElsewhere(onChange: () => void): () => void {
+  if (!syncChannel) {
+    return () => {};
+  }
+
+  const handleMessage = (event: MessageEvent<{ tabId: string }>) => {
+    if (event.data?.tabId !== tabId) {
+      onChange();
+    }
+  };
+
+  syncChannel.addEventListener('message', handleMessage);
+  return () => syncChannel.removeEventListener('message', handleMessage);
+}
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -61,6 +100,7 @@ export async function writeWorkspace(
   workspace: WorkspaceRecord,
 ): Promise<void> {
   await withStore('readwrite', (store) => store.put(workspace, 'main'));
+  syncChannel?.postMessage({ tabId });
 }
 
 export async function clearWorkspace(): Promise<void> {
