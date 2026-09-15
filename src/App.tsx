@@ -13,6 +13,8 @@ import { useCvLibrary } from './hooks/useCvLibrary';
 import { useEditHistory } from './hooks/useEditHistory';
 import { CvDataSettingsModal } from './components/CvDataSettingsModal';
 import { CvGeminiKeyModal } from './components/CvGeminiKeyModal';
+import { CvNamePromptModal } from './components/CvNamePromptModal';
+import { CvSaveAsBaseModal } from './components/CvSaveAsBaseModal';
 import { CvToolbarMenu } from './components/CvToolbarMenu';
 import { CvToolsSidebar } from './components/CvToolsSidebar';
 import type { SidebarSection } from './components/CvToolsSidebar';
@@ -116,6 +118,9 @@ export const App = () => {
   const [openSection, setOpenSection] = useState<SidebarSection | null>(null);
   const [showDataSettings, setShowDataSettings] = useState(false);
   const [showMasterImportPanel, setShowMasterImportPanel] = useState(false);
+  const [showSaveCopyModal, setShowSaveCopyModal] = useState(false);
+  const [showSaveEditAsCopyModal, setShowSaveEditAsCopyModal] = useState(false);
+  const [showSaveAsBaseModal, setShowSaveAsBaseModal] = useState(false);
   const [jobDescription, setJobDescription] = useState('');
   const [aiReply, setAiReply] = useState('');
   const [coverLetterDraft, setCoverLetterDraft] = useState('');
@@ -354,7 +359,15 @@ export const App = () => {
   }, [isEditing, redo, undo]);
 
   useEffect(() => {
-    if (!showDataSettings && !showMasterImportPanel && !showGeminiKeyModal && openSection === null) {
+    if (
+      !showDataSettings
+      && !showMasterImportPanel
+      && !showGeminiKeyModal
+      && !showSaveCopyModal
+      && !showSaveEditAsCopyModal
+      && !showSaveAsBaseModal
+      && openSection === null
+    ) {
       return;
     }
 
@@ -365,6 +378,21 @@ export const App = () => {
 
       if (showGeminiKeyModal) {
         setShowGeminiKeyModal(false);
+        return;
+      }
+
+      if (showSaveCopyModal) {
+        setShowSaveCopyModal(false);
+        return;
+      }
+
+      if (showSaveEditAsCopyModal) {
+        setShowSaveEditAsCopyModal(false);
+        return;
+      }
+
+      if (showSaveAsBaseModal) {
+        setShowSaveAsBaseModal(false);
         return;
       }
 
@@ -386,7 +414,15 @@ export const App = () => {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [openSection, showDataSettings, showGeminiKeyModal, showMasterImportPanel]);
+  }, [
+    openSection,
+    showDataSettings,
+    showGeminiKeyModal,
+    showMasterImportPanel,
+    showSaveCopyModal,
+    showSaveEditAsCopyModal,
+    showSaveAsBaseModal,
+  ]);
 
   const handleSelectVersion = (versionId: string) => {
     if (isEditing) {
@@ -446,22 +482,21 @@ export const App = () => {
     clearEditHistory();
   };
 
-  const handleSaveEditAsCopy = async () => {
+  const handleOpenSaveEditAsCopy = () => {
     if (!draftVersion) {
       return;
     }
 
     commitText();
+    setShowSaveEditAsCopyModal(true);
+  };
 
-    const label = window.prompt(
-      'Name for this saved CV:',
-      `${draftVersion.label} copy`,
-    )?.trim();
-
-    if (!label) {
+  const handleSaveEditAsCopy = async (label: string) => {
+    if (!draftVersion) {
       return;
     }
 
+    setShowSaveEditAsCopyModal(false);
     setIsSavingEdits(true);
     setActionError(null);
 
@@ -553,125 +588,71 @@ export const App = () => {
     requestAnimationFrame(() => window.print());
   };
 
-  const handleSaveCopy = async () => {
+  const handleSaveCopy = (label: string) => {
     if (!selectedVersion || isEditing) {
       return;
     }
 
-    const label = window.prompt('Name for this saved CV:', `${selectedVersion.label} copy`);
-    if (!label?.trim()) {
+    setShowSaveCopyModal(false);
+    setActionError(null);
+
+    void (async () => {
+      try {
+        const savedVersion = await saveCopy(label, selectedVersion.id);
+        setSelectedVersionId(savedVersion.id);
+        setActionMessage(`Saved "${savedVersion.label}".`);
+      } catch (saveError) {
+        const message = saveError instanceof Error
+          ? saveError.message
+          : 'Failed to save CV copy.';
+        setActionError(message);
+      }
+    })();
+  };
+
+  const handleCreateBase = (label: string) => {
+    if (!selectedVersion || isEditing) {
       return;
     }
 
+    setShowSaveAsBaseModal(false);
     setActionError(null);
 
-    try {
-      const savedVersion = await saveCopy(label.trim(), selectedVersion.id);
-      setSelectedVersionId(savedVersion.id);
-      setActionMessage(`Saved "${savedVersion.label}".`);
-    } catch (saveError) {
-      const message = saveError instanceof Error
-        ? saveError.message
-        : 'Failed to save CV copy.';
-      setActionError(message);
-    }
+    void (async () => {
+      try {
+        const baseVersion = await setAsBase(selectedVersion.id, { mode: 'create', label });
+        setSelectedVersionId(baseVersion.id);
+        setActionMessage(`Created base: ${label}.`);
+      } catch (promoteError) {
+        const message = promoteError instanceof Error
+          ? promoteError.message
+          : 'Failed to create base CV.';
+        setActionError(message);
+      }
+    })();
   };
 
-  const handleSetAsBase = async () => {
+  const handleReplaceBase = (targetBaseId: string) => {
     if (!selectedVersion || !library || isEditing) {
       return;
     }
 
-    const modeAnswer = window.prompt(
-      `Save "${selectedVersion.label}" as a base CV:\n\n1) Create new base\n2) Replace existing base\n\nEnter 1 or 2:`,
-      '1',
-    );
-
-    if (!modeAnswer?.trim()) {
-      return;
-    }
-
-    const modeChoice = Number.parseInt(modeAnswer.trim(), 10);
+    const targetBase = library.bases.find((base) => base.id === targetBaseId);
+    setShowSaveAsBaseModal(false);
     setActionError(null);
 
-    try {
-      if (modeChoice === 1) {
-        const label = window.prompt(
-          'Name for the new base CV:',
-          selectedVersion.label,
-        )?.trim();
-
-        if (!label) {
-          return;
-        }
-
-        const confirmed = window.confirm(
-          `Create new base "${label}" from "${selectedVersion.label}"?`,
-        );
-
-        if (!confirmed) {
-          return;
-        }
-
-        const baseVersion = await setAsBase(selectedVersion.id, {
-          mode: 'create',
-          label,
-        });
+    void (async () => {
+      try {
+        const baseVersion = await setAsBase(selectedVersion.id, { mode: 'replace', targetBaseId });
         setSelectedVersionId(baseVersion.id);
-        setActionMessage(`Created base: ${label}.`);
-        return;
+        setActionMessage(`Updated base: ${targetBase?.label ?? baseVersion.label}.`);
+      } catch (promoteError) {
+        const message = promoteError instanceof Error
+          ? promoteError.message
+          : 'Failed to update base CV.';
+        setActionError(message);
       }
-
-      if (modeChoice !== 2) {
-        setActionError('Enter 1 to create a new base or 2 to replace an existing one.');
-        return;
-      }
-
-      if (library.bases.length === 0) {
-        setActionError('No existing bases to replace. Choose create new base instead.');
-        return;
-      }
-
-      const options = library.bases
-        .map((base, index) => `${index + 1}) ${base.label}`)
-        .join('\n');
-      const replaceAnswer = window.prompt(
-        `Replace which base with "${selectedVersion.label}"?\n\n${options}\n\nEnter a number:`,
-        '1',
-      );
-
-      if (!replaceAnswer?.trim()) {
-        return;
-      }
-
-      const replaceChoice = Number.parseInt(replaceAnswer.trim(), 10);
-      const targetBase = library.bases[replaceChoice - 1];
-
-      if (!targetBase) {
-        setActionError(`Enter a number between 1 and ${library.bases.length}.`);
-        return;
-      }
-
-      const confirmed = window.confirm(
-        `Replace "${targetBase.label}" with "${selectedVersion.label}"?`,
-      );
-
-      if (!confirmed) {
-        return;
-      }
-
-      const baseVersion = await setAsBase(selectedVersion.id, {
-        mode: 'replace',
-        targetBaseId: targetBase.id,
-      });
-      setSelectedVersionId(baseVersion.id);
-      setActionMessage(`Updated base: ${targetBase.label}.`);
-    } catch (promoteError) {
-      const message = promoteError instanceof Error
-        ? promoteError.message
-        : 'Failed to update base CV.';
-      setActionError(message);
-    }
+    })();
   };
 
   const handleDeleteSaved = async () => {
@@ -1342,6 +1323,38 @@ export const App = () => {
         />
       ) : null}
 
+      {showSaveCopyModal && selectedVersion ? (
+        <CvNamePromptModal
+          title="Save copy"
+          fieldLabel="Name for this saved CV"
+          defaultValue={`${selectedVersion.label} copy`}
+          confirmLabel="Save copy"
+          onConfirm={handleSaveCopy}
+          onClose={() => setShowSaveCopyModal(false)}
+        />
+      ) : null}
+
+      {showSaveEditAsCopyModal && draftVersion ? (
+        <CvNamePromptModal
+          title="Save as copy"
+          fieldLabel="Name for this saved CV"
+          defaultValue={`${draftVersion.label} copy`}
+          confirmLabel="Save copy"
+          onConfirm={handleSaveEditAsCopy}
+          onClose={() => setShowSaveEditAsCopyModal(false)}
+        />
+      ) : null}
+
+      {showSaveAsBaseModal && selectedVersion && library ? (
+        <CvSaveAsBaseModal
+          sourceLabel={selectedVersion.label}
+          bases={library.bases}
+          onCreate={handleCreateBase}
+          onReplace={handleReplaceBase}
+          onClose={() => setShowSaveAsBaseModal(false)}
+        />
+      ) : null}
+
       <div className="app-main">
         <header className="app-toolbar">
           {!sidebarOpen ? (
@@ -1432,7 +1445,7 @@ export const App = () => {
                     <button
                       type="button"
                       className="app-button"
-                      onClick={() => void handleSaveEditAsCopy()}
+                      onClick={handleOpenSaveEditAsCopy}
                       disabled={isSavingEdits}
                     >
                       {isSavingEdits ? 'Saving…' : 'Save as copy…'}
@@ -1459,7 +1472,7 @@ export const App = () => {
                     <button
                       type="button"
                       className="app-button app-button-secondary"
-                      onClick={() => void handleSaveEditAsCopy()}
+                      onClick={handleOpenSaveEditAsCopy}
                       disabled={isSavingEdits}
                     >
                       Save as copy…
@@ -1484,13 +1497,13 @@ export const App = () => {
                       id: 'save-copy',
                       label: 'Save copy',
                       disabled: isExampleMode,
-                      onSelect: () => void handleSaveCopy(),
+                      onSelect: () => setShowSaveCopyModal(true),
                     },
                     {
                       id: 'save-as-base',
                       label: 'Save as base…',
                       disabled: isExampleMode,
-                      onSelect: () => void handleSetAsBase(),
+                      onSelect: () => setShowSaveAsBaseModal(true),
                     },
                     {
                       id: 'reload',
