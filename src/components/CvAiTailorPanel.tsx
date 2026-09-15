@@ -134,7 +134,7 @@ export const CvAiTailorPanel = ({
             Generates a saved CV directly from your Gemini API key — no copy/paste. Your key is
             stored only in this browser and sent straight to Google.
           </p>
-          <div className="app-toolbar-actions app-toolbar-actions-inline">
+          <div className="app-toolbar-actions app-toolbar-actions-inline app-toolbar-actions-gemini">
             {hasGeminiKey ? (
               <button
                 type="button"
