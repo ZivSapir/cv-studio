@@ -355,7 +355,7 @@ function toStringArray(raw: unknown, validIds: Set<string>): string[] | undefine
  * back into the CvVersion record shape, dropping anything that references an id that doesn't
  * exist in master — a defense-in-depth check beyond the schema enum itself.
  */
-function toGeneratedTailoredCv(raw: unknown, master: CvMaster): GeneratedTailoredCv {
+export function toGeneratedTailoredCv(raw: unknown, master: CvMaster): GeneratedTailoredCv {
   if (!isRecord(raw)) {
     throw new Error('Gemini returned an invalid CV payload.');
   }
