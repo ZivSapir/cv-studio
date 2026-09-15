@@ -88,10 +88,27 @@ function killProcessTree(child) {
   }
 }
 
-async function runCheck(baseUrl, id) {
-  const { chromium } = await import('playwright');
+// Chromium and WebKit lay out the same CSS (Montserrat + fallbacks) at measurably different
+// heights - WebKit reliably renders taller. A Chromium-only check can report ~85px spare while
+// WebKit (Safari's engine, the macOS default) overflows the same document. Measure both and let
+// the worse one decide; only fall back to Chromium-only if WebKit isn't installed.
+const ENGINES = ['chromium', 'webkit'];
 
-  const browser = await chromium.launch({ headless: true });
+async function measureWithEngine(engineName, baseUrl, id) {
+  const playwright = await import('playwright');
+  const engine = playwright[engineName];
+
+  let browser;
+  try {
+    browser = await engine.launch({ headless: true });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message.includes("Executable doesn't exist")) {
+      return { engine: engineName, skipped: true };
+    }
+    throw error;
+  }
+
   const page = await browser.newPage({
     viewport: { width: 1280, height: 900 },
   });
@@ -111,15 +128,15 @@ async function runCheck(baseUrl, id) {
     const result = await page.evaluate(() => window.__CV_PAGE_FIT__);
 
     if (!result) {
-      throw new Error('Page fit probe did not publish a result.');
+      throw new Error(`Page fit probe did not publish a result (${engineName}).`);
     }
 
     if (result.error) {
-      console.error(result.error);
-      return 2;
+      return { engine: engineName, error: result.error };
     }
 
-    const payload = {
+    return {
+      engine: engineName,
       versionId: result.versionId,
       overflows: result.overflows,
       overflowPx: result.overflowPx,
@@ -127,39 +144,67 @@ async function runCheck(baseUrl, id) {
       clientHeight: result.clientHeight,
       scrollHeight: result.scrollHeight,
     };
-
-    console.log(JSON.stringify(payload));
-
-    if (result.overflows) {
-      console.error(
-        `OVERFLOW: ${result.versionId} exceeds one A4 page by ~${Math.round(result.overflowPx)}px.`,
-      );
-      return 1;
-    }
-
-    if (payload.sparePx < 55) {
-      console.error(
-        `TOO TIGHT: ${result.versionId} has only ~${Math.round(payload.sparePx)}px spare (target 55-75px). ` +
-          'Headless measurement under-reports vs the in-app preview by ~10-20px, so this risks real overflow. Shorten copy or hide a lower-priority bullet/project.',
-      );
-      return 1;
-    }
-
-    if (payload.sparePx > 75) {
-      console.error(
-        `TOO SPARSE: ${result.versionId} has ~${Math.round(payload.sparePx)}px spare (target 55-75px). ` +
-          'The page looks under-filled. Add back a relevant bullet, project, or richer (still honest) wording.',
-      );
-      return 3;
-    }
-
-    console.error(
-      `OK: ${result.versionId} fits one A4 page in the target band (~${Math.round(payload.sparePx)}px spare).`,
-    );
-    return 0;
   } finally {
     await browser.close();
   }
+}
+
+async function runCheck(baseUrl, id) {
+  const measurements = [];
+
+  for (const engineName of ENGINES) {
+    const measurement = await measureWithEngine(engineName, baseUrl, id);
+
+    if (measurement.error) {
+      console.error(measurement.error);
+      return 2;
+    }
+
+    if (measurement.skipped) {
+      console.error(`(${engineName} not installed - run \`npx playwright install ${engineName}\` for a cross-engine check; skipping)`);
+      continue;
+    }
+
+    console.log(JSON.stringify(measurement));
+    measurements.push(measurement);
+  }
+
+  if (measurements.length === 0) {
+    console.error('No browser engines available to measure page fit.');
+    return 2;
+  }
+
+  // The worse (most overflowing / least spare) engine decides the verdict.
+  const worst = measurements.reduce((a, b) => (a.sparePx <= b.sparePx ? a : b));
+  const versionId = worst.versionId;
+
+  if (worst.overflows) {
+    console.error(
+      `OVERFLOW: ${versionId} exceeds one A4 page by ~${Math.round(worst.overflowPx)}px in ${worst.engine}.`,
+    );
+    return 1;
+  }
+
+  if (worst.sparePx < 40) {
+    console.error(
+      `TOO TIGHT: ${versionId} has only ~${Math.round(worst.sparePx)}px spare in ${worst.engine} (target 40-100px). ` +
+        'This risks real overflow in some browsers. Shorten copy or hide a lower-priority bullet/project.',
+    );
+    return 1;
+  }
+
+  if (worst.sparePx > 100) {
+    console.error(
+      `TOO SPARSE: ${versionId} has ~${Math.round(worst.sparePx)}px spare in ${worst.engine} (target 40-100px). ` +
+        'The page looks under-filled. Add back a relevant bullet, project, or richer (still honest) wording.',
+    );
+    return 3;
+  }
+
+  console.error(
+    `OK: ${versionId} fits one A4 page in the target band in every measured engine (worst case ~${Math.round(worst.sparePx)}px spare, ${worst.engine}).`,
+  );
+  return 0;
 }
 
 let devChild = null;

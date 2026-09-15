@@ -12,6 +12,7 @@ import { CvDocument } from './components/CvDocument';
 import { useCvLibrary } from './hooks/useCvLibrary';
 import { useEditHistory } from './hooks/useEditHistory';
 import { CvDataSettingsModal } from './components/CvDataSettingsModal';
+import { CvGeminiKeyModal } from './components/CvGeminiKeyModal';
 import { CvToolbarMenu } from './components/CvToolbarMenu';
 import { CvToolsSidebar } from './components/CvToolsSidebar';
 import type { SidebarSection } from './components/CvToolsSidebar';
@@ -54,6 +55,15 @@ import {
   buildCvPdfTitle,
   measureCvPageFit,
 } from './lib/printCv';
+import {
+  readGeminiApiKey,
+  writeGeminiApiKey,
+} from './lib/gemini/geminiApiKey';
+import {
+  generateTailoredCv,
+  refineTailoredCv,
+} from './lib/gemini/generateTailoredCv';
+import { formatGeminiError } from './lib/gemini/geminiUtils';
 import type {
   CvLibrary,
   CvMaster,
@@ -111,6 +121,11 @@ export const App = () => {
   const [personalNoteDraft, setPersonalNoteDraft] = useState('');
   const [cvImportText, setCvImportText] = useState('');
   const [masterAiReply, setMasterAiReply] = useState('');
+  const [geminiApiKey, setGeminiApiKey] = useState<string | null>(() => readGeminiApiKey());
+  const [showGeminiKeyModal, setShowGeminiKeyModal] = useState(false);
+  const [isGeneratingWithGemini, setIsGeneratingWithGemini] = useState(false);
+  const [geminiRefineInstruction, setGeminiRefineInstruction] = useState('');
+  const [isRefiningWithGemini, setIsRefiningWithGemini] = useState(false);
   const {
     draftVersion,
     canUndo,
@@ -274,7 +289,7 @@ export const App = () => {
 
       if (overflows) {
         setPageFit({ status: 'overflow', sparePx });
-      } else if (sparePx > 75) {
+      } else if (sparePx > 100) {
         setPageFit({ status: 'sparse', sparePx });
       } else {
         setPageFit(null);
@@ -337,12 +352,17 @@ export const App = () => {
   }, [isEditing, redo, undo]);
 
   useEffect(() => {
-    if (!showDataSettings && !showMasterImportPanel && openSection === null) {
+    if (!showDataSettings && !showMasterImportPanel && !showGeminiKeyModal && openSection === null) {
       return;
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') {
+        return;
+      }
+
+      if (showGeminiKeyModal) {
+        setShowGeminiKeyModal(false);
         return;
       }
 
@@ -364,7 +384,7 @@ export const App = () => {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [openSection, showDataSettings, showMasterImportPanel]);
+  }, [openSection, showDataSettings, showGeminiKeyModal, showMasterImportPanel]);
 
   const handleSelectVersion = (versionId: string) => {
     if (isEditing) {
@@ -924,6 +944,98 @@ export const App = () => {
     }
   };
 
+  const handleSaveGeminiKey = (key: string) => {
+    writeGeminiApiKey(key);
+    setGeminiApiKey(key);
+  };
+
+  const handleRemoveGeminiKey = () => {
+    writeGeminiApiKey(null);
+    setGeminiApiKey(null);
+  };
+
+  const handleGenerateWithGemini = async () => {
+    if (!master || !jobDescription.trim() || isEditing || isExampleMode || isGeneratingWithGemini) {
+      return;
+    }
+
+    setActionError(null);
+    setIsGeneratingWithGemini(true);
+
+    try {
+      const generated = await generateTailoredCv({
+        apiKey: geminiApiKey,
+        master,
+        jobDescription,
+      });
+
+      const trimmedJd = jobDescription.trim();
+      const saved = await importSavedVersion({
+        ...generated,
+        extends: 'master',
+        ...(trimmedJd ? { jobDescription: trimmedJd } : {}),
+      });
+      setSelectedVersionId(saved.id);
+      setOpenSection(null);
+      setMode('preview');
+      setActionMessage(`Generated saved CV "${saved.label}" with Gemini.`);
+    } catch (generateError) {
+      setActionError(formatGeminiError(generateError));
+    } finally {
+      setIsGeneratingWithGemini(false);
+    }
+  };
+
+  const handleRefineWithGemini = async () => {
+    if (
+      !master
+      || !selectedVersion
+      || selectedVersion.kind !== 'saved'
+      || !geminiRefineInstruction.trim()
+      || isEditing
+      || isExampleMode
+      || isRefiningWithGemini
+    ) {
+      return;
+    }
+
+    setActionError(null);
+    setIsRefiningWithGemini(true);
+
+    try {
+      const refined = await refineTailoredCv({
+        apiKey: geminiApiKey,
+        master,
+        jobDescription,
+        currentVersion: selectedVersion,
+        instruction: geminiRefineInstruction,
+        fitFeedback: pageFit ?? undefined,
+      });
+
+      const saved = await updateVersion({
+        ...selectedVersion,
+        headline: refined.headline,
+        summary: refined.summary,
+        hiddenBulletIds: refined.hiddenBulletIds ?? [],
+        hiddenProjectIds: refined.hiddenProjectIds ?? [],
+        bulletOverrides: refined.bulletOverrides ?? {},
+        projectOverrides: refined.projectOverrides ?? {},
+        experienceBulletOrder: refined.experienceBulletOrder ?? {},
+        projectOrder: refined.projectOrder ?? [],
+        skillCategoryOrder: refined.skillCategoryOrder ?? [],
+        skillOverrides: refined.skillOverrides ?? {},
+        projectsSectionTitle: refined.projectsSectionTitle,
+        footerNote: refined.footerNote,
+      });
+      setGeminiRefineInstruction('');
+      setActionMessage(`Updated "${saved.label}" with Gemini.`);
+    } catch (refineError) {
+      setActionError(formatGeminiError(refineError));
+    } finally {
+      setIsRefiningWithGemini(false);
+    }
+  };
+
   const handleCopyCoverLetterPrompt = async () => {
     if (!master || !resolvedCv || !jobDescription.trim()) {
       return;
@@ -1127,6 +1239,16 @@ export const App = () => {
       onCopyPrompt={handleCopyAiPrompt}
       onApplyReply={handleApplyAiReply}
       onClose={() => setOpenSection(null)}
+      hasGeminiKey={Boolean(geminiApiKey)}
+      isGenerating={isGeneratingWithGemini}
+      onOpenGeminiKeySettings={() => setShowGeminiKeyModal(true)}
+      onGenerateWithGemini={handleGenerateWithGemini}
+      canRefine={isSavedSelected}
+      refineInstruction={geminiRefineInstruction}
+      isRefining={isRefiningWithGemini}
+      pageFitHint={pageFit}
+      onRefineInstructionChange={setGeminiRefineInstruction}
+      onRefineWithGemini={handleRefineWithGemini}
     />
   ) : null;
 
@@ -1171,6 +1293,15 @@ export const App = () => {
           onImportBackupFile={handleImportBackupFile}
           onImportMasterFile={handleImportMasterFile}
           onResetToExamples={handleResetToExamples}
+        />
+      ) : null}
+
+      {showGeminiKeyModal ? (
+        <CvGeminiKeyModal
+          hasKey={Boolean(geminiApiKey)}
+          onSave={handleSaveGeminiKey}
+          onRemove={handleRemoveGeminiKey}
+          onClose={() => setShowGeminiKeyModal(false)}
         />
       ) : null}
 
