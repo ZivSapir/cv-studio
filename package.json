@@ -7,6 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "preview": "vite preview",
     "setup": "node scripts/setup-local-data.mjs",
     "backup": "node scripts/export-local-backup.mjs",
@@ -29,6 +31,7 @@
     "oxlint": "^1.71.0",
     "playwright": "^1.58.2",
     "typescript": "~6.0.2",
-    "vite": "^8.1.1"
+    "vite": "^8.1.1",
+    "vitest": "^5.0.1"
   }
 }
