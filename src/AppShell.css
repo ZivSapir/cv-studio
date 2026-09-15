@@ -939,6 +939,24 @@ body {
   list-style: none;
 }
 
+.app-radio-list {
+  margin: 8px 0 12px;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.app-radio-list label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
 .app-hidden-list + .app-hidden-list {
   margin-top: 8px;
   padding-top: 8px;
