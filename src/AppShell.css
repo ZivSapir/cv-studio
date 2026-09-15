@@ -839,7 +839,8 @@ body {
   line-height: 1.4;
 }
 
-.app-ai-field textarea {
+.app-ai-field textarea,
+.app-ai-field input {
   width: 100%;
   box-sizing: border-box;
   padding: 10px 12px;
@@ -852,6 +853,35 @@ body {
   letter-spacing: normal;
   color: #102a43;
   resize: vertical;
+}
+
+.app-ai-panel .app-button svg {
+  width: 14px;
+  height: 14px;
+  margin-right: 4px;
+  vertical-align: -2px;
+}
+
+.app-ai-fit-hint {
+  align-self: flex-start;
+  margin: -4px 0 12px;
+  padding: 6px 10px;
+  border: 1px dashed #829ab1;
+  border-radius: 999px;
+  background: #f0f4f8;
+  color: #243b53;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.app-ai-fit-hint:hover {
+  background: #d9e2ec;
+}
+
+.app-ai-fit-hint:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .app-preview {
