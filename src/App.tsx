@@ -9,6 +9,7 @@ import { CvOnboardingWizard } from './components/CvOnboardingWizard';
 import { CvSiteFooter } from './components/CvSiteFooter';
 import { CvCompareView } from './components/CvCompareView';
 import { CvDocument } from './components/CvDocument';
+import type { CvLayout } from './components/CvDocument';
 import { useCvLibrary } from './hooks/useCvLibrary';
 import { useEditHistory } from './hooks/useEditHistory';
 import { CvDataSettingsModal } from './components/CvDataSettingsModal';
@@ -37,6 +38,7 @@ import { validateCvBackup, validateCvMaster, validateCvVersionSafeFields } from 
 import type { OnboardingDraft } from './lib/onboarding/types';
 import { isPlaceholderMaster } from './lib/isPlaceholderMaster';
 import { compareResolvedCvs } from './lib/compareCv';
+import { buildSaveCopyDefaultLabel, companyForSavedFile } from './lib/companyName';
 import {
   listHiddenBullets,
   listHiddenProjects,
@@ -113,6 +115,7 @@ export const App = () => {
 
   const [selectedVersionId, setSelectedVersionId] = useState(DEFAULT_VERSION_ID);
   const [mode, setMode] = useState<AppMode>('preview');
+  const [cvLayout, setCvLayout] = useState<CvLayout>('two-column');
   const [isEditing, setIsEditing] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [openSection, setOpenSection] = useState<SidebarSection | null>(null);
@@ -568,8 +571,9 @@ export const App = () => {
 
     const pageElement = pageRef.current;
     const previousTitle = document.title;
+    const company = companyForSavedFile(selectedVersion?.label, jobDescription);
     const pdfTitle = resolvedCv
-      ? buildCvPdfTitle(resolvedCv.name, resolvedCv.headline)
+      ? buildCvPdfTitle(resolvedCv.name, resolvedCv.headline, company)
       : 'CV';
     document.title = pdfTitle;
 
@@ -585,7 +589,15 @@ export const App = () => {
       return;
     }
 
-    requestAnimationFrame(() => window.print());
+    // Montserrat loads with `display: swap` (see index.css), so a fallback font can still be
+    // showing at click time. Fallback-font metrics reflow taller than Montserrat, and since the
+    // two-column page clips overflow instead of paginating, printing before the swap can silently
+    // drop the tail of the CV. Wait for fonts the same way the page-fit probe does.
+    void document.fonts.ready.then(() => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => window.print());
+      });
+    });
   };
 
   const handleSaveCopy = (label: string) => {
@@ -1327,7 +1339,7 @@ export const App = () => {
         <CvNamePromptModal
           title="Save copy"
           fieldLabel="Name for this saved CV"
-          defaultValue={`${selectedVersion.label} copy`}
+          defaultValue={buildSaveCopyDefaultLabel(selectedVersion.label, jobDescription)}
           confirmLabel="Save copy"
           onConfirm={handleSaveCopy}
           onClose={() => setShowSaveCopyModal(false)}
@@ -1338,7 +1350,7 @@ export const App = () => {
         <CvNamePromptModal
           title="Save as copy"
           fieldLabel="Name for this saved CV"
-          defaultValue={`${draftVersion.label} copy`}
+          defaultValue={buildSaveCopyDefaultLabel(draftVersion.label, jobDescription)}
           confirmLabel="Save copy"
           onConfirm={handleSaveEditAsCopy}
           onClose={() => setShowSaveEditAsCopyModal(false)}
@@ -1405,6 +1417,26 @@ export const App = () => {
               disabled={isCompareBaseSelected || isEditing}
             >
               Compare
+            </button>
+          </div>
+
+          <div
+            className="app-segmented"
+            title="Two-column reads better visually; single-column is safer for ATS resume parsers that ignore or garble sidebar text."
+          >
+            <button
+              type="button"
+              className={cvLayout === 'two-column' ? 'app-segment app-segment-active' : 'app-segment'}
+              onClick={() => setCvLayout('two-column')}
+            >
+              2-column
+            </button>
+            <button
+              type="button"
+              className={cvLayout === 'single-column' ? 'app-segment app-segment-active' : 'app-segment'}
+              onClick={() => setCvLayout('single-column')}
+            >
+              1-column (ATS)
             </button>
           </div>
 
@@ -1725,6 +1757,7 @@ export const App = () => {
           cv={resolvedCv}
           pageRef={pageRef}
           isEditing={isEditing}
+          layout={cvLayout}
           editActions={isEditing ? {
               onHeadlineChange: (value) => {
                 applyText((version) => setVersionHeadline(version, value));

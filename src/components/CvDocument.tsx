@@ -39,11 +39,14 @@ type CvDocumentEditActions = {
   onHideProject: (projectId: string) => void;
 };
 
+export type CvLayout = 'two-column' | 'single-column';
+
 type CvDocumentProps = {
   cv: ResolvedCv;
   pageRef?: RefObject<HTMLElement | null>;
   isEditing?: boolean;
   editActions?: CvDocumentEditActions;
+  layout?: CvLayout;
 };
 
 const renderBulletText = (text: string) => {
@@ -143,14 +146,22 @@ export const CvDocument = ({
   pageRef,
   isEditing = false,
   editActions,
+  layout = 'two-column',
 }: CvDocumentProps) => {
   const experienceCount = cv.experience.length;
   const projectCount = cv.projects.length;
+  const pageClassName = [
+    'cv-page',
+    isEditing ? 'cv-page-editing' : null,
+    layout === 'single-column' ? 'cv-page-single-column' : null,
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   return (
     <article
       ref={pageRef}
-      className={isEditing ? 'cv-page cv-page-editing' : 'cv-page'}
+      className={pageClassName}
       aria-label={`CV version ${cv.versionLabel}`}
     >
       <header className="cv-header">

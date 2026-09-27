@@ -57,6 +57,51 @@
   padding-left: 5mm;
 }
 
+/* Single-column mode: some ATS parsers read a two-column PDF left-to-right across the whole
+   page width and garble or drop the sidebar. This stacks the same content into one linear
+   column instead of changing what it says. Unlike the two-column layout, this one is not
+   clipped to one A4 page - the same content takes roughly twice the vertical space stacked,
+   so it is expected to spread across two printed pages rather than being trimmed to fit one. */
+.cv-page-single-column {
+  height: auto;
+  min-height: 297mm;
+  overflow: visible;
+  /* On-screen only: mark where each A4 page boundary falls once printed, so it's obvious in
+     the preview - before printing - that content past the first line will land on page 2, 3,
+     etc. Purely decorative; hidden for print/export further below since real page breaks make
+     it redundant there. */
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent calc(297mm - 1px),
+    rgba(220, 38, 38, 0.55) calc(297mm - 1px),
+    rgba(220, 38, 38, 0.55) 297mm
+  );
+  background-size: 100% 297mm;
+}
+
+@media print {
+  .cv-page-single-column {
+    background-image: none;
+  }
+}
+
+.cv-page-single-column .cv-columns {
+  grid-template-columns: 1fr;
+}
+
+.cv-page-single-column .cv-sidebar {
+  padding-right: 0;
+  border-right: none;
+  border-bottom: 1px solid #d9d9d9;
+  padding-bottom: 3mm;
+  margin-bottom: 3mm;
+}
+
+.cv-page-single-column .cv-main {
+  padding-left: 0;
+}
+
 .cv-section {
   margin-bottom: 3mm;
 }
@@ -118,11 +163,32 @@
     break-after: avoid-page;
   }
 
-  .cv-columns {
-    page-break-before: avoid;
-    break-before: avoid-page;
+  /* Two-column is already capped to exactly one page by .cv-page's fixed height + overflow:
+     hidden, so there is no second page for an "avoid break" hint to push content onto - in
+     some Chrome versions, forcing avoid-inside/avoid-before on a block that size (nearly the
+     whole page) against that fixed, clipped container has been observed to drop the tail of
+     the content instead of just clipping it cleanly. Leave it at the default (auto) so the
+     browser lays it out normally and overflow: hidden does the (correct, deterministic)
+     clipping on its own. Single-column has no fixed height, so it paginates normally too.
+  */
+  .cv-page .cv-columns {
+    page-break-inside: auto;
+    break-inside: auto;
+  }
+
+  /* Keep each entry and its heading together so a page break lands between entries, not
+     mid-bullet or mid-role, when single-column content spreads across two pages. */
+  .cv-page-single-column .cv-education-entry,
+  .cv-page-single-column .cv-experience-block,
+  .cv-page-single-column .cv-role-block,
+  .cv-page-single-column .cv-project-block {
     page-break-inside: avoid;
     break-inside: avoid-page;
+  }
+
+  .cv-page-single-column .cv-section-title {
+    page-break-after: avoid;
+    break-after: avoid-page;
   }
 
   .cv-contact-link {

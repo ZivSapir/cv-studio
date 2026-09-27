@@ -5,13 +5,18 @@ import { PageFitApp } from './PageFitApp';
 import { CvErrorBoundary } from './components/CvErrorBoundary';
 import './index.css';
 
-const pageFitVersionId = new URLSearchParams(window.location.search).get('pageFit');
+const searchParams = new URLSearchParams(window.location.search);
+const pageFitVersionId = searchParams.get('pageFit');
+const pageFitLayout = searchParams.get('layout') === 'single-column' ? 'single-column' : 'two-column';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <CvErrorBoundary>
       {pageFitVersionId ? (
-        <PageFitApp versionId={pageFitVersionId} />
+        <PageFitApp
+          versionId={pageFitVersionId}
+          layout={pageFitLayout}
+        />
       ) : (
         <App />
       )}

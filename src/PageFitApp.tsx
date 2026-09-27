@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { CvDocument } from './components/CvDocument';
+import type { CvLayout } from './components/CvDocument';
 import { mergeCvVersion } from './lib/mergeCvVersion';
 import { measureCvPageFit, type CvPageFitMeasurement } from './lib/printCv';
 import type { CvLibrary, CvMaster, CvVersion } from './types/cv';
@@ -19,6 +20,7 @@ declare global {
 
 type PageFitAppProps = {
   versionId: string;
+  layout?: CvLayout;
 };
 
 async function loadCvData(): Promise<{ master: CvMaster; library: CvLibrary }> {
@@ -48,7 +50,7 @@ function findVersion(library: CvLibrary, versionId: string): CvVersion | undefin
   );
 }
 
-export const PageFitApp = ({ versionId }: PageFitAppProps) => {
+export const PageFitApp = ({ versionId, layout = 'two-column' }: PageFitAppProps) => {
   const pageRef = useRef<HTMLElement>(null);
   const [master, setMaster] = useState<CvMaster | null>(null);
   const [version, setVersion] = useState<CvVersion | null>(null);
@@ -188,6 +190,7 @@ export const PageFitApp = ({ versionId }: PageFitAppProps) => {
     <CvDocument
       cv={resolvedCv}
       pageRef={pageRef}
+      layout={layout}
     />
   );
 };

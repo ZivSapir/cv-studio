@@ -3,7 +3,7 @@
  * Measure whether a CV version overflows one A4 page (PageFitApp / `?pageFit=` probe).
  * In-app preview uses the same `measureCvPageFit` helper after fonts settle (see App.tsx).
  *
- * Usage: npm run check-page-fit -- <version-id>
+ * Usage: npm run check-page-fit -- <version-id> [--layout=single-column]
  * Requires: dev server on CV_STUDIO_URL (default http://127.0.0.1:5173), or script will start one.
  */
 
@@ -13,10 +13,13 @@ import path from 'node:path';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-const versionId = process.argv[2];
+const args = process.argv.slice(2);
+const versionId = args.find((arg) => !arg.startsWith('--'));
+const layoutArg = args.find((arg) => arg.startsWith('--layout='));
+const layout = layoutArg?.slice('--layout='.length) === 'single-column' ? 'single-column' : 'two-column';
 
 if (!versionId) {
-  console.error('Usage: npm run check-page-fit -- <version-id>');
+  console.error('Usage: npm run check-page-fit -- <version-id> [--layout=single-column]');
   process.exit(2);
 }
 
@@ -94,7 +97,7 @@ function killProcessTree(child) {
 // the worse one decide; only fall back to Chromium-only if WebKit isn't installed.
 const ENGINES = ['chromium', 'webkit'];
 
-async function measureWithEngine(engineName, baseUrl, id) {
+async function measureWithEngine(engineName, baseUrl, id, layout) {
   const playwright = await import('playwright');
   const engine = playwright[engineName];
 
@@ -114,7 +117,7 @@ async function measureWithEngine(engineName, baseUrl, id) {
   });
 
   try {
-    const url = `${baseUrl}/?pageFit=${encodeURIComponent(id)}`;
+    const url = `${baseUrl}/?pageFit=${encodeURIComponent(id)}&layout=${encodeURIComponent(layout)}`;
     await page.goto(url, { waitUntil: 'networkidle', timeout: 30000 });
 
     await page.waitForFunction(
@@ -149,19 +152,23 @@ async function measureWithEngine(engineName, baseUrl, id) {
   }
 }
 
-async function runCheck(baseUrl, id) {
+async function runCheck(baseUrl, id, layout) {
+  // Chromium and WebKit are independent measurements - launch and load both concurrently
+  // instead of one after another, since neither result depends on the other.
+  const results = await Promise.all(
+    ENGINES.map((engineName) => measureWithEngine(engineName, baseUrl, id, layout)),
+  );
+
   const measurements = [];
 
-  for (const engineName of ENGINES) {
-    const measurement = await measureWithEngine(engineName, baseUrl, id);
-
+  for (const measurement of results) {
     if (measurement.error) {
       console.error(measurement.error);
       return 2;
     }
 
     if (measurement.skipped) {
-      console.error(`(${engineName} not installed - run \`npx playwright install ${engineName}\` for a cross-engine check; skipping)`);
+      console.error(`(${measurement.engine} not installed - run \`npx playwright install ${measurement.engine}\` for a cross-engine check; skipping)`);
       continue;
     }
 
@@ -214,7 +221,7 @@ try {
   const baseUrl = process.env.CV_STUDIO_URL ?? 'http://127.0.0.1:5173';
   const { child } = await ensureDevServer(baseUrl);
   devChild = child;
-  exitCode = await runCheck(baseUrl, versionId);
+  exitCode = await runCheck(baseUrl, versionId, layout);
 } catch (error) {
   const message = error instanceof Error ? error.message : String(error);
   console.error(message);

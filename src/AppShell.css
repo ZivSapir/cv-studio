@@ -1217,11 +1217,8 @@ body {
   html,
   body {
     width: 210mm;
-    height: 297mm;
-    max-height: 297mm;
     margin: 0;
     padding: 0;
-    overflow: hidden;
     background: #ffffff;
   }
 
@@ -1250,11 +1247,8 @@ body {
   .app-main,
   .app-preview {
     width: 210mm;
-    height: 297mm;
-    max-height: 297mm;
     padding: 0;
     margin: 0;
-    overflow: hidden;
   }
 
   .app-preview {
