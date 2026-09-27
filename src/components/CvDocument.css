@@ -66,6 +66,13 @@
   height: auto;
   min-height: 297mm;
   overflow: visible;
+  /* .cv-page's own top/bottom padding otherwise only renders once, at the very top of page 1
+     and the very bottom of the last page - every page break in between would sit flush against
+     the paper edge with no margin. "clone" repeats the full padding box on each printed page
+     fragment instead, so page 2+ gets its own proper top margin. Two-column never fragments (it
+     is exactly one page), so this has no effect there. */
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
   /* On-screen only: mark where each A4 page boundary falls once printed, so it's obvious in
      the preview - before printing - that content past the first line will land on page 2, 3,
      etc. Purely decorative; hidden for print/export further below since real page breaks make
@@ -176,16 +183,26 @@
     break-inside: auto;
   }
 
-  /* Keep each entry and its heading together so a page break lands between entries, not
-     mid-bullet or mid-role, when single-column content spreads across two pages. */
+  /* Education entries and projects are short (a few lines), so keeping each one atomic rarely
+     leaves a large gap. Experience entries can span several bullets across two roles, though -
+     forcing the whole entry to stay together left a big blank gap on the page before it whenever
+     it didn't quite fit, rather than filling the page and breaking between bullets. So for
+     experience, only keep each individual bullet/heading from splitting mid-line; let the break
+     land between bullets or roles instead of before the whole entry. */
   .cv-page-single-column .cv-education-entry,
-  .cv-page-single-column .cv-experience-block,
-  .cv-page-single-column .cv-role-block,
   .cv-page-single-column .cv-project-block {
     page-break-inside: avoid;
     break-inside: avoid-page;
   }
 
+  .cv-page-single-column .cv-bullet-list li,
+  .cv-page-single-column .cv-education-details li {
+    page-break-inside: avoid;
+    break-inside: avoid-page;
+  }
+
+  .cv-page-single-column .cv-block-header,
+  .cv-page-single-column .cv-role-title,
   .cv-page-single-column .cv-section-title {
     page-break-after: avoid;
     break-after: avoid-page;
