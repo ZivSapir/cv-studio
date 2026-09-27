@@ -1,7 +1,13 @@
 const INVALID_FILENAME_CHARS = /[\\/:*?"<>|]/g;
 
-export function buildCvPdfTitle(name: string, headline: string): string {
-  const title = `${name.trim()} - ${headline.trim()}`
+export function buildCvPdfTitle(
+  name: string,
+  headline: string,
+  company?: string | null,
+): string {
+  const base = `${name.trim()} - ${headline.trim()}`;
+  const shouldAppendCompany = company && !base.toLowerCase().includes(company.toLowerCase());
+  const title = `${base}${shouldAppendCompany ? ` (${company})` : ''}`
     .replace(INVALID_FILENAME_CHARS, '')
     .replace(/\s+/g, ' ')
     .trim();
