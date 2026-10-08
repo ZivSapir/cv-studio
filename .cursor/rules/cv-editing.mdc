@@ -20,7 +20,7 @@ alwaysApply: false
 - `data/saved/*.yaml` stores job-specific variants (local, gitignored). See `data/saved/*.example.yaml` for committed examples.
 - Never invent experience, skills, titles, or metrics in master or versions.
 - **`roleTitleOverrides` is forbidden** for agents and BYO AI. To fix a title, edit **master** only after the user confirms it matches reality (e.g. HR record).
-- `internalPeriod` on a role is for interview context only — it is not shown on the PDF.
+- `period` on a role is printed next to the role title on the PDF, so multiple roles at one employer each show their own dates (ATS parsers and recruiters read a shared range as unclear). Keep it consistent with the employer `tenure`. `internalPeriod` on a role is for interview context only — it is not shown on the PDF.
 - Preview **Edit mode** writes to the active base/saved YAML only — never to `master.yaml` from the UI.
 
 ## Voice & content rules
@@ -29,6 +29,7 @@ alwaysApply: false
 - **Natural angle, not JD cosplay.** Match the role by spotlighting real technical work and high skills. Do **not** bolt on awkward, over-specific closers or soft-skill lines that sound written for the posting (e.g. "Motivated to configure workspaces and guide users on Monday.com", "Strong English", "university TA…", "passionate about client enablement"). Summaries should read like a strong engineer/practitioner describing what they do well; motivation lines stay general and process/skill oriented when used at all (e.g. clearer processes, less manual work), not product- or duty-name echoes.
 - **Don't let the JD's own job title become the candidate's self-description.** If your established identity (per master.yaml / knowledge base) is broader or different from the posting's title (e.g. the posting says "Backend Engineer" but you're full-stack), tailor emphasis toward the posting's theme without rewriting headline/summary/cover letter to claim the posting's narrower label as your own. Old saved CVs or informal past wording are not evidence of identity — master.yaml and your knowledge base are.
 - **No YAML line breaks inside hyphenated words.** Folded `>` blocks turn newlines into spaces, so `cross-\nrepository` becomes `cross- repository` on the PDF. Keep hyphenated words on one line (`cross-repository`).
+- **Date format is uniform everywhere:** ranges are `YYYY - YYYY` or `Month YYYY - Month YYYY` with a spaced ASCII hyphen, never an en dash, in `tenure`, `period` (education and role), and `internalPeriod`, across master, bases, saved versions, and `experienceAdditions`. Some ATS parsers read en dashes and hyphens differently. Do not introduce a mix.
 - Prefer not to put candidate home city, age, or gender in headline or summary unless the user asks for it.
 - **No job posting location** in `coverLetter`, `personalNote`, or other applicant-facing copy: drop "in Raanana", "Tel Aviv on site", etc.; use company + role only.
 - Employer location on an experience line (company + city) is fine — that describes the employer, not the candidate or the posting.
@@ -39,6 +40,8 @@ alwaysApply: false
 **Allowed:** `headline`, `summary`, `bulletOverrides` (same underlying facts, clearer emphasis for this JD), `projectOverrides`, `skillOverrides` (reorder or rephrase **only skills already in master** — do not add tools/frameworks not already listed), hide/reorder bullets and projects.
 
 **Allowed (rare):** `experienceAdditions` + `experienceOrder` only for entries the user has explicitly confirmed and documented (e.g. thesis/academic bullets), using verified copy — not new employers.
+
+**Thesis/academic entries must set `kind: research`** on the `experienceAdditions` entry. They render under their own "Academic Research" heading, always after work entries, so a degree-length date range never appears as a job overlapping the real employer's dates.
 
 **Not allowed:** inventing skills, years, employers, metrics, or tools; **`roleTitleOverrides`**; JD keywords that are not backed by master/knowledge base; implying a different job title than master; claiming seniority, platform, or domain experience the user does not have; **calling out misalignment** with the posting (missing reqs, wrong seniority, wrong stack) in any applicant-facing text.
 
