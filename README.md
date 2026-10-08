@@ -30,6 +30,7 @@ Open the hosted site (after Pages is enabled): `https://zivsapir.github.io/cv-st
 - **Tailor with AI**: copy a prompt into your ChatGPT/Gemini and paste the reply back, or paste your own Gemini API key to generate directly — see [Bring your own AI](#bring-your-own-ai) below for the exact steps
 - **Cover letter** (saved CVs only): optional BYO-AI letter per application; print to PDF
 - Nothing is uploaded to our servers
+- Using Chrome or Edge with local YAML files? In **Data settings**, click **Connect data folder** and pick your project's `data/` folder. The site reads the files in your browser (nothing is uploaded) and shows your CVs; after the first connection, use **Sync from folder** to pick up new or edited files. Syncing replaces the CVs stored in that browser with the folder's contents. `npm run sync` also writes a backup file you can import manually in any browser.
 
 ### Option 2: Local + coding agent (Cursor / Claude Code / similar)
 

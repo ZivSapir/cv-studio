@@ -12,6 +12,7 @@
     "preview": "vite preview",
     "setup": "node scripts/setup-local-data.mjs",
     "backup": "node scripts/export-local-backup.mjs",
+    "sync": "node scripts/sync-to-web.mjs",
     "check-page-fit": "node scripts/check-page-fit.mjs"
   },
   "dependencies": {

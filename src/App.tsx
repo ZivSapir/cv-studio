@@ -1,5 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { load as parseYaml } from 'js-yaml';
+import {
+  forgetDataFolder,
+  getStoredDataFolder,
+  hasFolderReadAccess,
+  isFolderSyncSupported,
+  pickDataFolder,
+  readBackupFromDataFolder,
+  type CvDataFolderHandle,
+} from './lib/folderSync';
 import { TbSettings } from 'react-icons/tb';
 import { CvAiTailorPanel } from './components/CvAiTailorPanel';
 import { CvCoverLetterPanel } from './components/CvCoverLetterPanel';
@@ -160,6 +169,8 @@ export const App = () => {
 
   const isExampleMode = dataSource === 'example';
   const isBrowserBackend = backendKind === 'browser';
+  const [dataFolder, setDataFolder] = useState<CvDataFolderHandle | null>(null);
+  const autoSyncedRef = useRef(false);
   const canMutateData = !isExampleMode && !isEditing;
   const needsOnboarding = !isExampleMode && Boolean(master && isPlaceholderMaster(master));
 
@@ -693,6 +704,85 @@ export const App = () => {
       setActionError(message);
     }
   };
+
+  const syncFromDataFolder = async (
+    folder: CvDataFolderHandle,
+    requestAccess: boolean,
+  ) => {
+    if (!(await hasFolderReadAccess(folder, requestAccess))) {
+      return false;
+    }
+
+    const backup = await readBackupFromDataFolder(folder);
+    await importBackup(backup);
+    setActionMessage(
+      `Synced ${backup.saved.length} saved CVs and ${backup.bases.length} bases from "${folder.name}".`,
+    );
+    return true;
+  };
+
+  const handleConnectDataFolder = async () => {
+    setActionError(null);
+
+    try {
+      const folder = await pickDataFolder();
+      await syncFromDataFolder(folder, true);
+      setDataFolder(folder);
+    } catch (connectError) {
+      if (connectError instanceof DOMException && connectError.name === 'AbortError') {
+        return;
+      }
+      setActionError(
+        connectError instanceof Error ? connectError.message : 'Failed to read the data folder.',
+      );
+    }
+  };
+
+  const handleSyncDataFolder = async () => {
+    setActionError(null);
+
+    try {
+      if (dataFolder && !(await syncFromDataFolder(dataFolder, true))) {
+        setActionError('Permission to read the data folder was not granted.');
+      }
+    } catch (syncError) {
+      setActionError(
+        syncError instanceof Error ? syncError.message : 'Failed to sync the data folder.',
+      );
+    }
+  };
+
+  const handleDisconnectDataFolder = async () => {
+    await forgetDataFolder();
+    setDataFolder(null);
+    setActionMessage('Data folder disconnected. CVs already in this browser were kept.');
+  };
+
+  useEffect(() => {
+    if (backendKind !== 'browser' || autoSyncedRef.current || !isFolderSyncSupported()) {
+      return;
+    }
+
+    autoSyncedRef.current = true;
+    void (async () => {
+      const folder = await getStoredDataFolder();
+      if (!folder) {
+        return;
+      }
+
+      setDataFolder(folder);
+      try {
+        await syncFromDataFolder(folder, false);
+      } catch (autoSyncError) {
+        setActionError(
+          autoSyncError instanceof Error
+            ? autoSyncError.message
+            : 'Failed to sync the data folder.',
+        );
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [backendKind]);
 
   const handleExportBackup = async () => {
     setActionError(null);
@@ -1316,6 +1406,16 @@ export const App = () => {
           dataSource={dataSource}
           dataSourceDisabled={isEditing}
           dataActionsDisabled={!canMutateData}
+          folderSync={
+            isBrowserBackend && isFolderSyncSupported()
+              ? {
+                  folderName: dataFolder?.name ?? null,
+                  onConnect: handleConnectDataFolder,
+                  onSync: handleSyncDataFolder,
+                  onDisconnect: handleDisconnectDataFolder,
+                }
+              : undefined
+          }
           showResetToExamples={isBrowserBackend}
           onClose={() => setShowDataSettings(false)}
           onDataSourceChange={handleDataSourceChange}

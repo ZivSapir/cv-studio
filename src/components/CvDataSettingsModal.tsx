@@ -1,11 +1,12 @@
 import { TbX } from 'react-icons/tb';
 import type { CvDataSource } from '../lib/loadCvData';
-import { CvBackupControls } from './CvBackupControls';
+import { CvBackupControls, type CvFolderSyncControls } from './CvBackupControls';
 
 type CvDataSettingsModalProps = {
   dataSource: CvDataSource;
   dataSourceDisabled?: boolean;
   dataActionsDisabled?: boolean;
+  folderSync?: CvFolderSyncControls;
   showResetToExamples: boolean;
   onClose: () => void;
   onDataSourceChange: (source: CvDataSource) => void;
@@ -19,6 +20,7 @@ export const CvDataSettingsModal = ({
   dataSource,
   dataSourceDisabled,
   dataActionsDisabled,
+  folderSync,
   showResetToExamples,
   onClose,
   onDataSourceChange,
@@ -98,6 +100,7 @@ export const CvDataSettingsModal = ({
         <div className="app-modal-section">
           <CvBackupControls
             disabled={dataActionsDisabled}
+            folderSync={folderSync}
             showResetToExamples={showResetToExamples}
             onExport={onExport}
             onImportBackupFile={onImportBackupFile}
