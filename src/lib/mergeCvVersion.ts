@@ -61,13 +61,16 @@ function filterExperience(
   return applyBulletOverrides(
     experience.map((entry) => ({
       ...entry,
-      roles: entry.roles.map((role) => ({
-        ...role,
-        bullets: orderByIds(
-          role.bullets.filter((bullet) => !hiddenBulletIds.has(bullet.id)),
-          bulletOrderByExperience?.[entry.id],
-        ),
-      })),
+      // A role whose bullets are all hidden is dropped, so no bare title/date line is printed.
+      roles: entry.roles
+        .map((role) => ({
+          ...role,
+          bullets: orderByIds(
+            role.bullets.filter((bullet) => !hiddenBulletIds.has(bullet.id)),
+            bulletOrderByExperience?.[entry.id],
+          ),
+        }))
+        .filter((role) => role.bullets.length > 0),
     })),
     bulletOverrides,
   );
@@ -111,13 +114,17 @@ function buildExperience(
     bulletOverrides,
   );
 
-  return applyRoleTitleOverrides(
-    orderByIds(
-      [...fromMaster, ...additions],
-      version.experienceOrder,
-    ),
-    version.roleTitleOverrides,
+  const ordered = orderByIds(
+    [...fromMaster, ...additions],
+    version.experienceOrder,
   );
+  // Research entries (e.g. a thesis) always follow work entries, under their own heading.
+  const researchLast = [
+    ...ordered.filter((entry) => entry.kind !== 'research'),
+    ...ordered.filter((entry) => entry.kind === 'research'),
+  ];
+
+  return applyRoleTitleOverrides(researchLast, version.roleTitleOverrides);
 }
 
 export function mergeCvVersion(

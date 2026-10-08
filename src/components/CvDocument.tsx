@@ -275,7 +275,10 @@ export const CvDocument = ({
             <h2 className="cv-section-title">Work Experience</h2>
             {cv.experience.map((entry, index) => (
               <Fragment key={entry.id}>
-                {index > 0 ? (
+                {entry.kind === 'research' &&
+                cv.experience[index - 1]?.kind !== 'research' ? (
+                  <h2 className="cv-section-title cv-research-title">Academic Research</h2>
+                ) : index > 0 ? (
                   <hr className="cv-experience-divider" />
                 ) : null}
                 <div className="cv-experience-block">
@@ -310,7 +313,12 @@ export const CvDocument = ({
                         className="cv-role-block"
                       >
                         {role.title.trim() ? (
-                          <h3 className="cv-role-title">{role.title.toUpperCase()}</h3>
+                          <h3 className="cv-role-title">
+                            {role.title.toUpperCase()}
+                            {role.period ? (
+                              <span className="cv-role-period"> | {role.period}</span>
+                            ) : null}
+                          </h3>
                         ) : null}
                         <ul className="cv-bullet-list">
                           {role.bullets.map((bullet) => {

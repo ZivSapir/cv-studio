@@ -23,7 +23,8 @@ experience:
     tenure: January 2020 - Present
     roles:
       - title: Software Engineer
-        internalPeriod: "2023 – Present"
+        period: "2023 - Present"
+        internalPeriod: "2023 - Present"
         bullets:
           - id: acme-feature
             text: >
@@ -38,7 +39,8 @@ experience:
               Tooling: Created [internal tool/script] that reduced [pain point] by [honest outcome].
             tags: [automation, developer-tools]
       - title: Junior Engineer
-        internalPeriod: "2020 – 2023"
+        period: "2020 - 2023"
+        internalPeriod: "2020 - 2023"
         bullets:
           - id: acme-quality
             text: >
@@ -77,7 +79,7 @@ education:
   institution: University Name
   entries:
     - degree: B.Sc. in Computer Science
-      period: 2016 – 2020
+      period: 2016 - 2020
       details:
         - "Relevant coursework: algorithms, databases, software engineering."
         - "Thesis or capstone: [topic in one line]."

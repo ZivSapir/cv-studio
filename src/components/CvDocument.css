@@ -127,6 +127,12 @@
   padding-bottom: 1mm;
 }
 
+.cv-research-title {
+  margin-top: 0.6mm;
+  margin-bottom: 0.8mm;
+  padding-bottom: 0.6mm;
+}
+
 .cv-contact-list {
   margin: 0;
   padding: 0;
@@ -398,6 +404,10 @@
   font-style: italic;
   font-size: 9pt;
   line-height: 1.28;
+}
+
+.cv-role-period {
+  font-weight: 400;
 }
 
 .cv-role-title {

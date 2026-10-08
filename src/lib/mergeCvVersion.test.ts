@@ -101,6 +101,35 @@ describe('mergeCvVersion', () => {
     expect(resolved.experience.map((e) => e.id)).toEqual(['side-gig', 'acme']);
   });
 
+  it('places research entries after work entries regardless of experienceOrder', () => {
+    const resolved = mergeCvVersion(
+      makeMaster(),
+      makeVersion({
+        experienceAdditions: [
+          {
+            id: 'thesis',
+            kind: 'research',
+            company: 'University',
+            location: 'M.Sc. Thesis',
+            tenure: '2019 - 2024',
+            roles: [{ title: '', bullets: [{ id: 'thesis-1', text: 'Analysed data.' }] }],
+          },
+        ],
+        experienceOrder: ['thesis', 'acme'],
+      }),
+    );
+
+    expect(resolved.experience.map((e) => e.id)).toEqual(['acme', 'thesis']);
+  });
+
+  it('drops a role whose bullets are all hidden', () => {
+    const master = makeMaster();
+    const bulletIds = master.experience[0]!.roles.flatMap((r) => r.bullets.map((b) => b.id));
+    const resolved = mergeCvVersion(master, makeVersion({ hiddenBulletIds: bulletIds }));
+
+    expect(resolved.experience[0]!.roles).toEqual([]);
+  });
+
   it('applies skill overrides by category id without mutating master', () => {
     const master = makeMaster();
     const resolved = mergeCvVersion(

@@ -6,12 +6,16 @@ export type CvBullet = {
 
 export type CvRole = {
   title: string;
+  /** Date range printed next to the role title (e.g. `2021 - 2025`). */
+  period?: string;
   internalPeriod?: string;
   bullets: CvBullet[];
 };
 
 export type CvExperience = {
   id: string;
+  /** `research` entries (e.g. a thesis) render under their own heading, not "Work Experience". */
+  kind?: 'work' | 'research';
   company: string;
   location: string;
   tenure: string;
